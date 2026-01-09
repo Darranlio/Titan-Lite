@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+apscheduler
+akshare
+pandas
+numpy
+pykalman
+requests
+matplotlib
+seaborn
+statsmodels
+scipy
+openai
+tenacity
