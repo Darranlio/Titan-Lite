@@ -6,6 +6,10 @@ WORKDIR /app
 
 # 先复制 package.json 安装依赖 (利用 Docker 缓存层)
 COPY package.json ./
+
+# === 关键修改：换成淘宝镜像源 ===
+RUN npm config set registry https://registry.npmmirror.com
+
 RUN npm install
 
 # 复制所有文档源码

@@ -1,15 +1,17 @@
 {
   "name": "titan-lite-docs",
   "version": "1.0.0",
+  "type": "module", 
   "private": true,
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
     "docs:preview": "vitepress preview"
   },
-  "devDependencies": {
+  "dependencies": {
     "vitepress": "^1.0.0",
-    "vitepress-plugin-mermaid": "^2.0.10",
-    "mermaid": "^10.9.0"
+    "markdown-it-mathjax3": "^4.3.2",   
+    "vitepress-plugin-mermaid": "^2.0.16",
+    "vue": "^3.0.0" 
   }
 }
