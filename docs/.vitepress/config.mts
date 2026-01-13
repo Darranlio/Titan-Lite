@@ -5,7 +5,7 @@ import mathjax3 from 'markdown-it-mathjax3'
 export default withMermaid(defineConfig({
 // === 1. 强制深色模式 ===
   appearance: 'dark',
-  title: "可塑性记忆Max",
+  title: "可塑性记忆-Max",
   description: "Projects, Notes & Thoughts",
 
   // 开启数学公式支持
@@ -13,6 +13,42 @@ export default withMermaid(defineConfig({
     config: (md) => {
       md.use(mathjax3)
     }
+  },
+
+  mermaid: {
+    // 使用 'base' 主题，它允许我们自定义所有颜色
+    theme: 'base',
+    themeVariables: {
+      // 告诉 Mermaid 我们在深色模式下
+      darkMode: true,
+
+      // 1. 背景：透明，完美融入网站背景
+      background: 'transparent',
+      mainBkg: 'transparent',
+
+      // 2. 核心节点 (矩形框)：深灰底 + 金色边框 + 白字
+      primaryColor: '#1E1E1E',       // 节点背景色 (深炭灰)
+      primaryBorderColor: '#D4AF37', // 节点边框色 (香槟金)
+      primaryTextColor: '#FFFFFF',   // 节点文字 (纯白)
+
+      // 3. 连线与箭头：高亮灰白，确保清晰
+      lineColor: '#E0E0E0',          // 连线颜色 (亮灰)
+      arrowheadColor: '#E0E0E0',     // 箭头颜色
+
+      // 4. 子图/容器 (Subgraph)：稍浅的灰色背景，做层次区分
+      tertiaryColor: '#252526',      // 容器背景
+      tertiaryBorderColor: '#555555',// 容器边框 (暗灰)
+      tertiaryTextColor: '#CCCCCC',  // 容器标题文字 (银灰)
+
+      // 5. 特殊形状 (圆圈/数据库)：使用强调色
+      secondaryColor: '#2D2D2D',
+      secondaryBorderColor: '#FFD700', // 更亮的金色强调
+      secondaryTextColor: '#FFF',
+
+      // 6. 字体优化：使用等宽字体增加科技感
+      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      fontSize: '14px'
+    },
   },
 
   themeConfig: {
@@ -57,11 +93,11 @@ export default withMermaid(defineConfig({
         {
           text: 'Titan-Lite 量化系统',
           items: [
-            { text: '项目简介', link: '/projects/titan-lite/' }, // 对应 index.md
-            { text: '系统架构设计', link: '/projects/titan-lite/architecture' },
-            { text: '核心策略算法', link: '/projects/titan-lite/strategy' },
-            { text: 'API 接口文档', link: '/projects/titan-lite/api' },
-            { text: '部署运维', link: '/projects/titan-lite/deploy' }
+            { text: '项目简介', link: '/projects/titan-lite/index.md' }, // 对应 index.md
+            { text: '系统架构设计', link: '/projects/titan-lite/design_doc.md' },
+            { text: '核心策略算法', link: '/projects/titan-lite/strategy.md' },
+            { text: 'API 接口文档', link: '/projects/titan-lite/api.md' },
+            { text: '部署运维', link: '/projects/titan-lite/deploy.md' }
           ]
         }
       ],

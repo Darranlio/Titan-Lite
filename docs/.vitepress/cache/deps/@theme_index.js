@@ -1,47 +1,47 @@
 import {
   useMediaQuery
-} from "./chunk-LJKO4TMH.js";
+} from "./chunk-L7EAXGFR.js";
 import {
   computed,
   ref,
   shallowRef,
   watch
-} from "./chunk-QE257C5J.js";
+} from "./chunk-ALQ527PF.js";
 import "./chunk-BUSYA2B4.js";
 
 // node_modules/vitepress/dist/client/theme-default/index.js
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/fonts.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/fonts.css";
 
 // node_modules/vitepress/dist/client/theme-default/without-fonts.js
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/vars.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/base.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/icons.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/utils.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/custom-block.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-code.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-code-group.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-doc.css";
-import "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-sponsor.css";
-import VPBadge from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPBadge.vue";
-import Layout from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/Layout.vue";
-import { default as default2 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPBadge.vue";
-import { default as default3 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPButton.vue";
-import { default as default4 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPDocAsideSponsors.vue";
-import { default as default5 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPFeatures.vue";
-import { default as default6 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeContent.vue";
-import { default as default7 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeFeatures.vue";
-import { default as default8 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeHero.vue";
-import { default as default9 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeSponsors.vue";
-import { default as default10 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPImage.vue";
-import { default as default11 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPLink.vue";
-import { default as default12 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPNavBarSearch.vue";
-import { default as default13 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSocialLink.vue";
-import { default as default14 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSocialLinks.vue";
-import { default as default15 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSponsors.vue";
-import { default as default16 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamMembers.vue";
-import { default as default17 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPage.vue";
-import { default as default18 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPageSection.vue";
-import { default as default19 } from "/root/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPageTitle.vue";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/vars.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/base.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/icons.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/utils.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/custom-block.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-code.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-code-group.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-doc.css";
+import "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/styles/components/vp-sponsor.css";
+import VPBadge from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPBadge.vue";
+import Layout from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/Layout.vue";
+import { default as default2 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPBadge.vue";
+import { default as default3 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPButton.vue";
+import { default as default4 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPDocAsideSponsors.vue";
+import { default as default5 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPFeatures.vue";
+import { default as default6 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeContent.vue";
+import { default as default7 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeFeatures.vue";
+import { default as default8 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeHero.vue";
+import { default as default9 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPHomeSponsors.vue";
+import { default as default10 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPImage.vue";
+import { default as default11 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPLink.vue";
+import { default as default12 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPNavBarSearch.vue";
+import { default as default13 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSocialLink.vue";
+import { default as default14 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSocialLinks.vue";
+import { default as default15 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPSponsors.vue";
+import { default as default16 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamMembers.vue";
+import { default as default17 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPage.vue";
+import { default as default18 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPageSection.vue";
+import { default as default19 } from "/usr/src/Titan-Lite/docs/node_modules/vitepress/dist/client/theme-default/components/VPTeamPageTitle.vue";
 
 // node_modules/vitepress/dist/client/theme-default/composables/local-nav.js
 import { onContentUpdated } from "vitepress";
