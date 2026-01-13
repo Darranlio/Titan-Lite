@@ -3,7 +3,7 @@ name: Titan-Lite CI/CD
 # 触发条件：当 main 分支有代码 push 时
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch: # 允许手动点击按钮触发
 
 env:
