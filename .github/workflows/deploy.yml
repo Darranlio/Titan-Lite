@@ -75,7 +75,9 @@ jobs:
             cd /usr/src/Titan-Lite
             
             # 2. 拉取最新的 docker-compose.yml (必须先在本地改好并 push!)
-            git pull origin master
+            # git pull origin master
+            git fetch --all
+            git reset --hard origin/master
             
             # 3. 登录阿里云 ACR (让服务器有权拉取)
             echo ${{ secrets.ALIYUN_PASSWORD }} | docker login ${{ secrets.ALIYUN_REGISTRY }} -u ${{ secrets.ALIYUN_USERNAME }} --password-stdin

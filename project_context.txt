@@ -14,7 +14,8 @@ FILE_PATH: docker-compose.yml
 services:
   # 服务A: 量化核心
   quant-core:
-    build: ./app
+    # build: ./app
+    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-core:latest
     container_name: titan_core
     restart: always
     # === 关键：加载环境变量 ===
@@ -34,7 +35,8 @@ services:
 
   # 服务B: 私有文档站
   knowledge-base:
-    build: ./docs
+    # build: ./docs
+    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-wiki:latest
     container_name: titan_wiki
     restart: always
     ports:
@@ -42,6 +44,100 @@ services:
     volumes:
       # 挂载密码文件
       - ./docs/.htpasswd:/etc/nginx/.htpasswd
+
+==================================================
+FILE_PATH: .github/workflows/deploy.yml
+==================================================
+name: Titan-Lite CI/CD (Aliyun ACR)
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+env:
+  OWNER: darranlio
+  # 👇👇👇 请在这里填入你在阿里云 ACR 创建的“命名空间” 👇👇👇
+  ALIYUN_NAMESPACE: titan-lite-repo 
+
+jobs:
+  # === 任务1: 构建并推送镜像到 阿里云 ACR ===
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1. 登录阿里云 ACR (替换了原来的 GHCR 登录)
+      - name: Log in to Aliyun ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      # 2. 构建后端镜像 (Core) -> 推送到阿里云
+      - name: Build and push Quant Core
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          # 👇 Tag 格式变了：Registry域名 / 命名空间 / 仓库名 : 标签
+          tags: ${{ secrets.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/titan-core:latest
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+
+      # 3. 构建文档镜像 (Wiki) -> 推送到阿里云
+      - name: Build and push Knowledge Base
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docs
+          push: true
+          # 👇 Tag 格式变了
+          tags: ${{ secrets.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/titan-wiki:latest
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+
+  # === 任务2: 部署到阿里云服务器 ===
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 1. 进入目录
+            if [ ! -d "/usr/src/Titan-Lite" ]; then
+              git clone https://github.com/${{ env.OWNER }}/Titan-Lite.git /usr/src/Titan-Lite
+            fi
+            cd /usr/src/Titan-Lite
+            
+            # 2. 拉取最新的 docker-compose.yml (必须先在本地改好并 push!)
+            git pull origin master
+            
+            # 3. 登录阿里云 ACR (让服务器有权拉取)
+            echo ${{ secrets.ALIYUN_PASSWORD }} | docker login ${{ secrets.ALIYUN_REGISTRY }} -u ${{ secrets.ALIYUN_USERNAME }} --password-stdin
+            
+            # 4. 拉取最新镜像 (这时候走的是阿里云内网/高速网，秒下)
+            docker-compose pull
+            
+            # 5. 重启
+            docker-compose up -d --remove-orphans
+            
+            # 6. 清理垃圾
+            docker image prune -f
 
 ==================================================
 FILE_PATH: docs/index.md
@@ -361,6 +457,11 @@ $$
 - [ ] **Q1**: 引入 **Vector DB (向量数据库)**，构建本地知识库，让 AI 基于历史研报回答问题。
 - [ ] **Q2**: 增加 **Backtest (回测) 模块**，在 Wiki 上展示策略的历史净值曲线。
 - [ ] **Q3**: 开发 Webhook 接口，支持 TradingView 信号接入。
+
+==================================================
+FILE_PATH: docs/projects/titan-lite/deploy.md
+==================================================
+
 
 ==================================================
 FILE_PATH: docs/projects/titan-lite/strategy.md
