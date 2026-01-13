@@ -1,17 +1,17 @@
-name: Titan-Lite CI/CD
+name: Titan-Lite CI/CD (Aliyun ACR)
 
-# 触发条件：当 master 分支有代码 push 时
 on:
   push:
     branches: [ "master" ]
-  workflow_dispatch: # 允许手动点击按钮触发
+  workflow_dispatch:
 
 env:
-  # 替换成你的 GitHub 用户名
-  OWNER: darranlio 
+  OWNER: darranlio
+  # 👇👇👇 请在这里填入你在阿里云 ACR 创建的“命名空间” 👇👇👇
+  ALIYUN_NAMESPACE: titan-lite-repo 
 
 jobs:
-  # === 任务1: 构建并推送镜像到 GitHub Registry ===
+  # === 任务1: 构建并推送镜像到 阿里云 ACR ===
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
@@ -25,36 +25,39 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      # 1. 登录阿里云 ACR (替换了原来的 GHCR 登录)
+      - name: Log in to Aliyun ACR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ secrets.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
 
-      # 1. 构建后端镜像 (Core)
+      # 2. 构建后端镜像 (Core) -> 推送到阿里云
       - name: Build and push Quant Core
         uses: docker/build-push-action@v5
         with:
           context: ./app
           push: true
-          tags: ghcr.io/${{ env.OWNER }}/titan-core:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 👇 Tag 格式变了：Registry域名 / 命名空间 / 仓库名 : 标签
+          tags: ${{ secrets.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/titan-core:latest
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
-      # 2. 构建文档镜像 (Wiki)
+      # 3. 构建文档镜像 (Wiki) -> 推送到阿里云
       - name: Build and push Knowledge Base
         uses: docker/build-push-action@v5
         with:
           context: ./docs
           push: true
-          tags: ghcr.io/${{ env.OWNER }}/titan-wiki:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 👇 Tag 格式变了
+          tags: ${{ secrets.ALIYUN_REGISTRY }}/${{ env.ALIYUN_NAMESPACE }}/titan-wiki:latest
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   # === 任务2: 部署到阿里云服务器 ===
   deploy:
-    needs: build-and-push # 必须等构建任务完成
+    needs: build-and-push
     runs-on: ubuntu-latest
     
     steps:
@@ -65,24 +68,23 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. 进入项目目录 (如果没有就克隆)
+            # 1. 进入目录
             if [ ! -d "/usr/src/Titan-Lite" ]; then
               git clone https://github.com/${{ env.OWNER }}/Titan-Lite.git /usr/src/Titan-Lite
             fi
-            
             cd /usr/src/Titan-Lite
             
-            # 2. 拉取最新的 docker-compose.yml 配置
+            # 2. 拉取最新的 docker-compose.yml (必须先在本地改好并 push!)
             git pull origin master
             
-            # 3. 登录 GHCR (为了拉取私有镜像，如果仓库公开这步可省略，但不删也无妨)
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # 3. 登录阿里云 ACR (让服务器有权拉取)
+            echo ${{ secrets.ALIYUN_PASSWORD }} | docker login ${{ secrets.ALIYUN_REGISTRY }} -u ${{ secrets.ALIYUN_USERNAME }} --password-stdin
             
-            # 4. 拉取最新镜像 (只拉取，不构建，省CPU)
+            # 4. 拉取最新镜像 (这时候走的是阿里云内网/高速网，秒下)
             docker-compose pull
             
-            # 5. 重启容器 (无缝切换)
+            # 5. 重启
             docker-compose up -d --remove-orphans
             
-            # 6. 清理多余的旧镜像 (防止磁盘爆满)
+            # 6. 清理垃圾
             docker image prune -f

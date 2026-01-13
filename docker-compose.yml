@@ -2,7 +2,7 @@ services:
   # 服务A: 量化核心
   quant-core:
     # build: ./app
-    image: ghcr.io/darranlio/titan-core:latest # <-- 加上这行
+    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-core:latest
     container_name: titan_core
     restart: always
     # === 关键：加载环境变量 ===
@@ -23,7 +23,7 @@ services:
   # 服务B: 私有文档站
   knowledge-base:
     # build: ./docs
-    image: ghcr.io/darranlio/titan-wiki:latest # <-- 加上这行
+    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-wiki:latest
     container_name: titan_wiki
     restart: always
     ports:
