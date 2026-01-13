@@ -1,7 +1,7 @@
 {
   "name": "titan-lite-docs",
   "version": "1.0.0",
-  "type": "module", 
+  "type": "module",
   "private": true,
   "scripts": {
     "docs:dev": "vitepress dev",
@@ -9,9 +9,14 @@
     "docs:preview": "vitepress preview"
   },
   "dependencies": {
+    "@braintree/sanitize-url": "^7.1.1",
+    "cytoscape": "^3.33.1",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "dayjs": "^1.11.19",
+    "debug": "^4.4.3",
+    "markdown-it-mathjax3": "^4.3.2",
     "vitepress": "^1.0.0",
-    "markdown-it-mathjax3": "^4.3.2",   
     "vitepress-plugin-mermaid": "^2.0.16",
-    "vue": "^3.0.0" 
+    "vue": "^3.0.0"
   }
 }

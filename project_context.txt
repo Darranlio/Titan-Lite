@@ -1,0 +1,1225 @@
+# Titan-Lite Project Codebase Export
+# Root: /usr/src/Titan-Lite
+
+==================================================
+FILE_PATH: README.md
+==================================================
+# Titan-Lite
+A Wall Street Titan shrunk into a Raspberry Pi.
+
+
+==================================================
+FILE_PATH: docker-compose.yml
+==================================================
+services:
+  # 服务A: 量化核心
+  quant-core:
+    build: ./app
+    container_name: titan_core
+    restart: always
+    # === 关键：加载环境变量 ===
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./app/data:/app/data
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'   # 限制1核CPU
+          memory: 1G    # 限制1G内存
+
+  # 服务B: 私有文档站
+  knowledge-base:
+    build: ./docs
+    container_name: titan_wiki
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      # 挂载密码文件
+      - ./docs/.htpasswd:/etc/nginx/.htpasswd
+
+==================================================
+FILE_PATH: docs/index.md
+==================================================
+---
+layout: home
+
+hero:
+  name: "Hi, I'm Darranlio!"
+  text: "Meituan UAV | Perception Algorithm"
+  tagline: "Always looking for exciting projects & technical exchanges."
+  
+  # === 头像配置 ===
+  image:
+    src: /avatar.png
+    alt: Darranlio
+  
+  # === 按钮配置 (原生支持，不要手写 HTML) ===
+  actions:
+    - theme: brand
+      text: 🚀 View Projects
+      link: /projects/titan-lite/
+    - theme: alt
+      text: 💬 Contact Me
+      link: "mailto:1059390428@qq.com"
+
+features:
+  - title: 🔭 Current Focus
+    details: Working on Meituan UAV & Learning perception algorithms.
+    icon: 🚁
+  - title: 📊 Projects
+    details: Titan-Lite Quant System & other open source tools.
+    icon: 📈
+    link: /projects/titan-lite/
+  - title: 📝 Notes
+    details: Technical exchanges, Python tricks, and algorithm studies.
+    icon: 📓
+    link: /notes/python/tricks
+
+---
+
+<style>
+:root {
+  /* 调整头像容器的基础大小，原版太大，这里限制为 160px */
+  --vp-home-hero-image-image-size: 160px; 
+}
+
+/* 强制让图片变成圆形，并加上边框，看起来更像 Profile */
+.VPHero .image-src {
+  border-radius: 50%;
+  border: 4px solid var(--vp-c-brand);
+  box-shadow: 0 0 30px rgba(0,0,0,0.3);
+  object-fit: cover;
+}
+
+/* 调整标题文字的渐变色，使其更具科技感 */
+.VPHero .name {
+  background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+</style>
+
+==================================================
+FILE_PATH: docs/package.json
+==================================================
+{
+  "name": "titan-lite-docs",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "@braintree/sanitize-url": "^7.1.1",
+    "cytoscape": "^3.33.1",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "dayjs": "^1.11.19",
+    "debug": "^4.4.3",
+    "markdown-it-mathjax3": "^4.3.2",
+    "vitepress": "^1.0.0",
+    "vitepress-plugin-mermaid": "^2.0.16",
+    "vue": "^3.0.0"
+  }
+}
+
+
+==================================================
+FILE_PATH: docs/projects/index.md
+==================================================
+
+
+==================================================
+FILE_PATH: docs/projects/titan-lite/index.md
+==================================================
+---
+# 页面配置
+outline: deep
+title: Titan-Lite 项目主页
+---
+
+# ⚡ Titan-Lite 量化交易系统
+
+> 一个针对 **2C2G 低配云服务器** 优化的轻量级、容器化量化交易系统。
+> 
+> *“让数学模型代替情绪，在云端 24小时为我打工。”*
+
+![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+
+## 📂 项目导航
+
+这里是项目的核心文档入口，请根据需要查阅：
+
+| 模块 | 说明 | 链接 |
+| :--- | :--- | :--- |
+| **📊 架构设计** | 系统的顶层设计、数据流向与数学模型公式 | [查看文档](./design_doc.md) |
+| **🧠 策略算法** | 卡尔曼滤波、Z-Score 信号生成逻辑 (施工中) | [查看文档](./strategy.md) |
+| **🔌 API 接口** | 后端 FastAPI 接口定义与调用方式 (施工中) | [查看文档](./api.md) |
+| **🚀 部署运维** | Docker 常用指令、环境恢复与日志查看 (施工中) | [查看文档](./deploy.md) |
+
+---
+
+## 🛠️ 技术栈概览
+
+本系统采用 **微服务架构**，主要包含以下组件：
+
+- **Quant Core**: 基于 `Python` + `Pandas` + `Kalman Filter` 的策略计算核心。
+- **Data Engine**: 封装 `AkShare`，实现带重试机制的数据清洗与存储。
+- **Notification**: 集成 **企业微信** Webhook，实现交易信号实时推送。
+- **Web UI**: 基于 `VitePress` (即本网站) 的静态知识库与仪表盘。
+
+## 📅 近期开发计划
+
+- [x] **Phase 1**: 基础环境搭建 (Docker, Nginx, Python)
+- [x] **Phase 2**: 知识库 Wiki 上线
+- [ ] **Phase 3**: 策略回测模块开发 (进行中...)
+- [ ] **Phase 4**: 实盘信号对接
+
+---
+
+::: tip 💡 提示
+点击左侧侧边栏的菜单，可以快速切换不同章节的文档。
+:::
+
+==================================================
+FILE_PATH: docs/projects/titan-lite/design_doc.md
+==================================================
+# 🏗️ Titan-Lite 系统架构设计文档
+
+::: info 文档元数据
+- **版本**: v1.0.0
+- **状态**: 🟢 已归档 (Stable)
+- **维护者**: Darranlio
+- **最后更新**: 2026-01-11
+:::
+
+## 1. 背景与价值分析 (Background & Value)
+
+### 1.1 项目背景
+在当前的 A 股市场环境中，散户投资者面临着信息不对称、情绪化交易和工具匮乏三大痛点。传统的看盘软件无法提供基于**统计套利 (Statistical Arbitrage)** 的深度分析，且市面上的量化系统大多庞大臃肿，不适合个人开发者在低成本云服务器上部署。
+
+### 1.2 核心价值
+**Titan-Lite** 旨在构建一个**轻量级、低延迟、基于数学模型**的辅助决策系统。
+
+* **客观性 (Objective)**: 用卡尔曼滤波 (Kalman Filter) 替代均线，用 Z-Score 替代直觉，通过数学消除情绪干扰。
+* **低成本 (Low Cost)**: 针对 2C/2G 低配云服务器优化，采用 Docker 容器化部署，运维成本极低。
+* **自动化 (Automation)**: 从数据清洗、策略计算到信号推送，实现全流程无人值守。
+
+---
+
+## 2. 目标与非目标 (Goals & Non-Goals)
+
+### ✅ 核心目标 (Goals)
+1.  **配对交易挖掘**: 每日自动扫描全市场，基于协整性 (Cointegration) 挖掘具有长期稳定价差关系的股票对 (CP)。
+2.  **动态风控**: 结合宏观指数波动率进行熔断，结合 AI 舆情分析过滤垃圾信号。
+3.  **双轨推送**: 实现“交易员视角” (操作指令) 和“观察者视角” (学术图表) 的差异化推送。
+4.  **资源适应性**: 必须在 2GB 内存环境下稳定运行，具备内存逃逸 (OOM) 保护机制。
+
+### ❌ 非目标 (Non-Goals)
+1.  **高频交易 (HFT)**: 不追求毫秒级速度，系统定位为日线/小时线级别的波段策略。
+2.  **全自动下单**: 仅提供决策信号，不直接对接券商接口进行实盘下单（出于合规与安全考虑）。
+3.  **即时大屏**: 不开发复杂的动态 Web Dashboard，使用静态 Wiki 和 IM 推送作为主要交互界面。
+
+---
+
+## 3. 系统总体架构 (System Architecture)
+
+系统采用 **微服务架构 (Microservices)**，主要由**量化计算核心 (Quant Core)** 和 **知识库 (Knowledge Base)** 两大容器组成。
+
+```mermaid
+graph TD
+    %% 外部节点定义
+    External_Data(("AkShare API"))
+    External_LLM(("DeepSeek API"))
+    User_WeCom(("企业微信"))
+    User_Browser(("浏览器"))
+
+    %% 主云端容器
+    subgraph Cloud ["阿里云 ECS (2C 2G)"]
+        
+        %% 量化容器
+        subgraph QuantContainer ["Container: Titan-Quant"]
+            Scheduler["APScheduler 调度器"]
+            DataAdaptor["数据适配层"]
+            Strategy["策略引擎"]
+            Math["数学模型库"]
+            AI["AI 舆情分析"]
+            Painter["绘图引擎"]
+            Push["企业微信推送"]
+        end
+
+        %% Wiki容器
+        subgraph WikiContainer ["Container: Nginx"]
+            StaticFiles["VitePress 静态资源"]
+        end
+        
+        %% Swap 节点
+        Swap[("虚拟内存 Swap")]
+    end
+
+    %% --- 连线逻辑放最后，防止解析错误 ---
+    
+    %% 外部交互
+    External_Data --> DataAdaptor
+    External_LLM --> AI
+    Push --> User_WeCom
+    StaticFiles --> User_Browser
+
+    %% 内部逻辑
+    Swap -.-> Scheduler
+    Scheduler --> Strategy
+    Strategy --> DataAdaptor
+    Strategy --> Math
+    Strategy --> AI
+    Strategy --> Painter
+    Painter --> Push
+```
+
+## 4. 核心模块详细设计 (Implementation Details)
+
+### 4.1 数据适配层 (Data Provider)
+针对开源数据接口不稳定的特性，设计了高健壮性的适配器。
+
+* **重试机制**: 使用 `tenacity` 库实现指数退避重试 (Exponential Backoff)，防止因网络抖动导致任务失败。
+* **接口隔离**: 将 `AkShare` 的调用封装在 `DataProvider` 类中，业务逻辑不直接依赖第三方库，便于未来更换数据源。
+
+### 4.2 数学模型层 (Math Engine)
+采用**动态对冲比率**计算模型，而非传统的静态回归。
+
+**核心算法：卡尔曼滤波 (Kalman Filter)**
+
+状态方程定义如下：
+$$
+\beta_t = \beta_{t-1} + \omega_t, \quad \omega_t \sim N(0, Q)
+$$
+
+观测方程：
+$$
+Price_A = \beta_t \cdot Price_B + \alpha_t + \epsilon_t
+$$
+
+其中 $\beta_t$ 为动态对冲比率，随时间自适应调整，能更快捕捉市场结构变化。
+
+### 4.3 策略执行层 (Strategy Executor)
+策略流水线包含三个阶段：
+
+1.  **宏观熔断 (Macro Guard)**:
+    * 检测沪深 300 指数近 20 日波动率。
+    * 若 `Vol > Threshold` 或 `Drawdown > 10%`，全系统暂停开仓。
+2.  **信号生成 (Signal Gen)**:
+    * 计算价差序列 (Spread)。
+    * 计算 Z-Score:
+    $$
+    Z = \frac{Spread - \mu}{\sigma}
+    $$
+    * 触发阈值：$|Z| > 2.0$ (95% 置信区间)。
+3.  **AI 过滤 (Fact Check)**:
+    * 调用 DeepSeek API 对标的股进行舆情摘要。
+    * Prompt 核心：*“请忽略短期波动，仅总结客观事实，判断是否存在基本面恶化。”*
+
+### 4.4 可视化与推送 (Visualization & Delivery)
+实现了 **ChartPainter** 绘图引擎，支持多模式输出：
+
+| 模式 | 风格 | 用途 | 内容特征 |
+| :--- | :--- | :--- | :--- |
+| **Private** | 深色/高对比度 | 实盘操作 | 包含止损线、明确买卖指令 |
+| **Public** | 白色/学术风 | 公众展示 | 包含水印、统计分布说明、免责声明 |
+
+---
+
+## 5. 基础设施与运维 (Infrastructure)
+
+### 5.1 资源约束应对 (Resource Constraints)
+鉴于 2GB 内存限制，系统采取了以下激进优化措施：
+
+1.  **Swap 策略**: 开启 2GB Swap，并设置 `vm.swappiness=60`，允许将非活跃的 Python 对象积极换出到磁盘。
+2.  **内存限制**: `package.json` 中限制 Node.js 构建内存 `--max-old-space-size=512`。
+3.  **错峰运行**: 文档构建 (Build) 与量化计算 (Run) 通过时间表错开，避免 CPU 争抢。
+
+### 5.2 CI/CD 流水线
+采用 **Docs as Code** 理念，通过 Git 管理一切。
+
+* **开发**: 本地 VS Code + Docker 环境。
+* **部署**: GitHub Actions / SSH 脚本一键拉取并重建容器。
+* **监控**: 基于 Docker Healthcheck 和 Python 内部的异常捕获推送。
+
+---
+
+## 6. 未来规划 (Roadmap)
+
+- [ ] **Q1**: 引入 **Vector DB (向量数据库)**，构建本地知识库，让 AI 基于历史研报回答问题。
+- [ ] **Q2**: 增加 **Backtest (回测) 模块**，在 Wiki 上展示策略的历史净值曲线。
+- [ ] **Q3**: 开发 Webhook 接口，支持 TradingView 信号接入。
+
+==================================================
+FILE_PATH: docs/projects/titan-lite/strategy.md
+==================================================
+# 🧠 核心策略算法 (Strategy Engine)
+
+::: info 文档元数据
+- **策略名称**: Dynamic Pair Trading with Kalman Filter
+- **适应周期**: 1H (小时线) / 1D (日线)
+- **状态**: 🟡 开发中 (In Development)
+- **最后更新**: 2026-01-12
+:::
+
+## 1. 策略概述 (Overview)
+
+本系统采用 **统计套利 (Statistical Arbitrage)** 中的配对交易策略。
+
+传统的配对交易通常使用 **最小二乘法 (OLS)** 也就是简单的线性回归 ($y = \beta x + \alpha$) 来计算两只股票的价差。但 OLS 有一个致命弱点：**它假设 $\beta$ (对冲比率) 是恒定不变的**。
+
+然而在真实市场中，两家公司的基本面关系是动态变化的。因此，Titan-Lite 引入 **卡尔曼滤波 (Kalman Filter)** 算法。它不仅仅利用过去的数据，而是像卫星导航一样，根据每一个新的观测值，**在线更新 (Online Update)** 当前的对冲比率。
+
+> **核心优势**: 不需要滑动窗口 (Rolling Window)，天然没有“窗口期滞后”的问题，对市场结构突变反应极快。
+
+---
+
+## 2. 数学模型推导 (Mathematical Model)
+
+我们将两只股票 $Y$ (标的资产) 和 $X$ (对冲资产) 的价格关系建模为线性状态空间模型。
+
+### 2.1 状态方程 (State Equation)
+我们假设两只股票之间的对冲比率 $\beta$ (即斜率) 不是常数，而是一个遵循**随机游走 (Random Walk)** 的变量。
+
+$$
+\beta_t = \beta_{t-1} + \omega_t, \quad \omega_t \sim \mathcal{N}(0, Q)
+$$
+
+* $\beta_t$: $t$ 时刻的隐藏状态（真实的对冲比率）。
+* $\omega_t$: 过程噪声 (Process Noise)，代表对冲比率随时间变化的剧烈程度。
+* $Q$: 过程噪声的协方差（超参数）。
+
+### 2.2 观测方程 (Observation Equation)
+我们观测到的市场价格 $Y_t$ 是由 $X_t$ 和当前的 $\beta_t$ 决定的，并带有一定的测量误差。
+
+$$
+Y_t = \beta_t \cdot X_t + \alpha_t + v_t, \quad v_t \sim \mathcal{N}(0, R)
+$$
+
+为了简化计算，我们通常将截距 $\alpha$ 也并入状态向量中。此时状态向量 $\theta_t = [\beta_t, \alpha_t]^T$。
+
+* $Y_t$: 股票 A 的价格。
+* $X_t$: 股票 B 的价格（或一篮子股票）。
+* $v_t$: 测量噪声 (Measurement Noise)。
+
+---
+
+## 3. 算法实现逻辑 (Implementation)
+
+在 2C2G 的服务器上，我们不能每次都读取几年的历史数据进行全量计算。我们需要一个**增量式 (Incremental)** 的过滤器。
+
+### 3.1 Python 伪代码 (Online Kalman Filter)
+
+以下是用于生产环境的精简版代码，基于 `numpy` 实现，去除了对重型库的依赖。
+
+```python
+import numpy as np
+
+class OnlineKalmanFilter:
+    def __init__(self, delta=1e-4, R=1e-3):
+        """
+        初始化卡尔曼滤波器
+        :param delta: 过程噪声系数 (控制 beta 变化的灵活性)
+        :param R: 测量噪声方差
+        """
+        # 1. 状态均值 (State Mean): [beta, alpha]
+        self.state_mean = np.zeros(2)
+        
+        # 2. 状态协方差 (State Covariance): P
+        self.P = np.zeros((2, 2))
+        
+        # 3. 过程噪声协方差 (Process Noise Covariance): Q
+        self.Q = delta / (1 - delta) * np.eye(2)
+        
+        # 4. 测量噪声方差 (Measurement Noise Variance): R
+        self.R = R
+
+    def update(self, price_y, price_x):
+        """
+        输入最新的价格，更新对冲比率，并返回当前的价差信号
+        :param price_y: 标的资产价格 (Stock A)
+        :param price_x: 对冲资产价格 (Stock B)
+        """
+        # 构建观测矩阵 H = [price_x, 1]
+        H = np.array([price_x, 1.0])
+        
+        # --- 预测步骤 (Predict) ---
+        # 假设随机游走，先验估计等于后验估计
+        # P_predict = P_prev + Q
+        self.P = self.P + self.Q
+        
+        # --- 更新步骤 (Update) ---
+        # 1. 计算观测误差 (Innovation / Residual)
+        y_hat = H @ self.state_mean
+        error = price_y - y_hat
+        
+        # 2. 计算观测误差的方差 (Variance of Prediction Error)
+        S = H @ self.P @ H.T + self.R
+        
+        # 3. 计算卡尔曼增益 (Kalman Gain)
+        K = self.P @ H.T / S
+        
+        # 4. 更新状态估计 (Update State Mean)
+        # beta_new = beta_old + K * error
+        self.state_mean = self.state_mean + K * error
+        
+        # 5. 更新状态协方差 (Update State Covariance)
+        # P_new = (I - K * H) * P_old
+        self.P = (np.eye(2) - np.outer(K, H)) @ self.P
+        
+        # --- 结果导出 ---
+        beta = self.state_mean[0]
+        alpha = self.state_mean[1]
+        
+        # 返回：当前误差(Spread)，误差标准差(用于计算Z-Score)
+        return error, np.sqrt(S), beta
+```
+
+## 4. 信号生成与交易规则 (Trading Rules)
+
+有了卡尔曼滤波器输出的实时误差（Spread）和方差，我们可以计算标准分（Z-Score）。
+
+### 4.1 Z-Score 计算
+不同于均线策略需要回看 N 天计算标准差，卡尔曼滤波器直接输出了预测误差的方差 $S_t$。
+
+$$
+Z_t = \frac{e_t}{\sqrt{S_t}} = \frac{Y_t - (\beta_t X_t + \alpha_t)}{\sqrt{S_t}}
+$$
+
+### 4.2 交易阈值 (Thresholds)
+
+| 信号类型 | 阈值条件 | 操作指令 | 逻辑解释 |
+| :--- | :--- | :--- | :--- |
+| **Open Long** | $Z < -2.0$ | 买入 Y，卖出 X | 价差过低，预期回归 |
+| **Open Short** | $Z > +2.0$ | 卖出 Y，买入 X | 价差过高，预期回归 |
+| **Close Position** | $|Z| < 0.5$ | 平掉所有仓位 | 均值回归完成，落袋为安 |
+| **Stop Loss** | $|Z| > 3.5$ | **强制止损** | 模型失效（脱锚），防止黑天鹅 |
+
+---
+
+## 5. 风险控制 (Risk Management)
+
+### 5.1 协整性校验 (Cointegration Check)
+并不是所有股票对都能做配对交易。系统会在每日收盘后运行 **Engle-Granger Two-Step Method**。
+* 若 `p-value > 0.05`，说明两只股票关系破裂，次日**禁止开新仓**。
+
+### 5.2 宏观熔断
+当市场处于极端恐慌状态时（如 2015 年股灾或 2024 年微盘股崩盘），统计规律会失效。
+
+* **监控指标**: 沪深 300 指数波动率。
+* **动作**: 若波动率飙升，自动降低杠杆或停止运行。
+
+---
+
+## 6. 下一步开发计划 (Roadmap)
+
+- [ ] 实现 `DataAdaptor` 对接实盘 Tick 数据流。
+- [ ] 编写回测脚本，验证该逻辑在 2023-2024 年的表现。
+- [ ] 参数优化：寻找最佳的 $Q$ (过程噪声) 和 $R$ (测量噪声) 值。
+
+==================================================
+FILE_PATH: docs/projects/titan-lite/api.md
+==================================================
+
+
+==================================================
+FILE_PATH: docs/projects/future-app/index.md
+==================================================
+
+
+==================================================
+FILE_PATH: docs/notes/linux/commands.md
+==================================================
+
+
+==================================================
+FILE_PATH: docs/notes/python/tricks.md
+==================================================
+
+
+==================================================
+FILE_PATH: docs/thoughts/2026-plan.md
+==================================================
+
+
+==================================================
+FILE_PATH: app/main.py
+==================================================
+from fastapi import FastAPI
+from apscheduler.schedulers.background import BackgroundScheduler
+from contextlib import asynccontextmanager
+from strategy import run_job
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler = BackgroundScheduler()
+    # 每天 15:05 执行
+    scheduler.add_job(run_job, 'cron', hour=15, minute=5, id='daily_strategy')
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/")
+def root(): return {"status": "ok"}
+
+@app.post("/run")
+def manual():
+    run_job()
+    return {"msg": "triggered"}
+
+==================================================
+FILE_PATH: app/ltcm_math.py
+==================================================
+import numpy as np
+from pykalman import KalmanFilter
+
+def run_kalman(x, y):
+    """
+    卡尔曼滤波计算动态 Beta, Alpha
+    """
+    delta = 1e-5
+    trans_cov = delta / (1 - delta) * np.eye(2)
+    obs_mat = np.vstack([x, np.ones(x.shape)]).T[:, np.newaxis]
+    
+    kf = KalmanFilter(
+        n_dim_obs=1, n_dim_state=2,
+        initial_state_mean=np.zeros(2),
+        initial_state_covariance=np.ones((2, 2)),
+        transition_matrices=np.eye(2),
+        observation_matrices=obs_mat,
+        observation_covariance=1.0,
+        transition_covariance=trans_cov
+    )
+    
+    state_means, _ = kf.filter(y.values)
+    return state_means[:, 0], state_means[:, 1]
+
+==================================================
+FILE_PATH: app/chart_painter.py
+==================================================
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import matplotlib.dates as mdates
+
+class ChartPainter:
+    """
+    绘图引擎：负责将枯燥的数据转化为可视化的图表
+    支持 '实战模式' 和 '展示模式' 两种风格
+    """
+    def __init__(self):
+        # 尝试设置中文字体，防止中文乱码
+        # SimHei 是黑体，Arial 是保底英文
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial']
+        # 解决负号显示为方块的问题
+        plt.rcParams['axes.unicode_minus'] = False
+
+    def draw(self, pair_name, df, z_score, mode="private"):
+        """
+        绘制双子图：价格走势 + Z-Score 偏离度
+        
+        :param pair_name: 股票对名称 (如 "茅台 vs 五粮液")
+        :param df: 包含 'A' 和 'B' 列的价格 DataFrame
+        :param z_score: Z-Score 的 Series
+        :param mode: 'private' (交易用) 或 'public' (公众号用)
+        :return: 图片的二进制数据 (BytesIO对象)
+        """
+        
+        # --- 1. 风格配置 ---
+        if mode == "public":
+            # 公版：使用 Seaborn 的白色网格风格，看起来像学术论文
+            sns.set_theme(style="whitegrid")
+            # 配色：深蓝(A) & 深红(B) & 蓝色(Z)
+            colors = ['#2c3e50', '#e74c3c', '#3498db']
+        else:
+            # 私版：使用暗色网格，适合夜间看盘，高对比度
+            sns.set_theme(style="darkgrid")
+            # 配色：亮黄(A) & 青色(B) & 洋红(Z)
+            colors = ['yellow', 'cyan', 'magenta']
+
+        # 创建画布：10英寸宽，8英寸高，包含两个子图(ax1, ax2)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        
+        # --- 2. 子图一：价格归一化对比 ---
+        # 归一化逻辑：当前价 / 第一天价。这样起点都是 1.0，方便对比涨幅差异
+        norm_A = df['A'] / df['A'].iloc[0]
+        norm_B = df['B'] / df['B'].iloc[0]
+        
+        ax1.plot(df.index, norm_A, label=pair_name.split(' vs ')[0], color=colors[0], linewidth=1.5)
+        ax1.plot(df.index, norm_B, label=pair_name.split(' vs ')[1], color=colors[1], linewidth=1.5)
+        ax1.legend(loc='upper left')
+        ax1.set_title(f"{pair_name} Price Ratio (Normalized)", fontweight='bold')
+        ax1.set_ylabel("Relative Value")
+
+        # --- 3. 子图二：Z-Score 统计偏离 ---
+        ax2.plot(df.index, z_score, color=colors[2], label='Spread Z-Score', linewidth=1.2)
+        
+        # --- 4. 模式差异化绘制 ---
+        if mode == "private":
+            # === 私版独有 ===
+            # 画出 ±2.0 的开仓阈值线 (虚线)
+            ax2.axhline(2.0, color='red', linestyle='--', alpha=0.8, label='Short Threshold')
+            ax2.axhline(-2.0, color='green', linestyle='--', alpha=0.8, label='Long Threshold')
+            # 标题醒目，提示交易
+            ax2.set_title("TRADING SIGNAL (Action Required)", color='red', fontweight='bold')
+            # 填充颜色，强调异常区域
+            ax2.fill_between(df.index, z_score, 2.0, where=(z_score>=2), color='red', alpha=0.3)
+            ax2.fill_between(df.index, z_score, -2.0, where=(z_score<=-2), color='green', alpha=0.3)
+        else:
+            # === 公版独有 ===
+            # 画出 ±2.0 的灰色区间，代表"正常波动范围"
+            ax2.axhspan(-2, 2, color='gray', alpha=0.1, label='95% Confidence Interval')
+            ax2.set_title("Statistical Deviation Analysis", fontsize=12)
+            # 添加水印：防止盗图，建立品牌
+            fig.text(0.5, 0.5, 'Titan-Lite Data Lab', fontsize=40, 
+                     color='gray', ha='center', va='center', alpha=0.1, rotation=30)
+
+        # 设置图例
+        ax2.legend(loc='upper left')
+        ax2.set_ylabel("Standard Deviations")
+        
+        # 格式化日期轴 (只显示 年-月)
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+        
+        # 调整布局，防止文字重叠
+        plt.tight_layout()
+        
+        # --- 5. 输出图片流 ---
+        buf = io.BytesIO()
+        # 保存为 PNG 格式，dpi=100 保证清晰度且体积不大
+        plt.savefig(buf, format='png', dpi=100)
+        buf.seek(0) # 指针回到开头
+        plt.close(fig) # 关闭画布释放内存
+        
+        return buf
+
+==================================================
+FILE_PATH: app/wecom.py
+==================================================
+import requests
+import time
+from config import settings
+
+class WeComBot:
+    def __init__(self):
+        # 使用配置
+        self.CORP_ID = settings.WECOM_CORP_ID
+        self.CORP_SECRET = settings.WECOM_CORP_SECRET
+        self.AGENTS = settings.WECOM_AGENTS
+        self.token = None
+        self.token_expires = 0
+
+    def get_token(self):
+        if self.token and time.time() < self.token_expires:
+            return self.token
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={self.CORP_ID}&corpsecret={self.CORP_SECRET}"
+        try:
+            resp = requests.get(url).json()
+            if resp.get('errcode') == 0:
+                self.token = resp['access_token']
+                self.token_expires = time.time() + 7000
+                return self.token
+        except: pass
+        return None
+
+    def upload_image(self, img_bytes, filename="chart.png"):
+        token = self.get_token()
+        if not token: return None
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={token}&type=image"
+        files = {'media': (filename, img_bytes, 'image/png')}
+        try:
+            resp = requests.post(url, files=files).json()
+            return resp.get('media_id')
+        except: return None
+
+    def send_markdown(self, content, mode="private"):
+        agent_id = self.AGENTS.get(mode, self.AGENTS["private"])
+        self._send(agent_id, "markdown", {"content": content})
+
+    def send_image(self, media_id, mode="private"):
+        agent_id = self.AGENTS.get(mode, self.AGENTS["private"])
+        self._send(agent_id, "image", {"media_id": media_id})
+
+    def _send(self, agent_id, msg_type, content_dict):
+        token = self.get_token()
+        if not token: return
+        url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
+        data = {"touser": "@all", "msgtype": msg_type, "agentid": agent_id, msg_type: content_dict}
+        requests.post(url, json=data)
+
+==================================================
+FILE_PATH: app/pair_miner.py
+==================================================
+import pandas as pd
+from statsmodels.tsa.stattools import coint
+from datetime import datetime, timedelta
+import concurrent.futures
+from data_provider import data_provider
+from config import settings
+
+class PairMiner:
+    def __init__(self, stock_list):
+        self.stock_list = stock_list
+        self.max_pairs = 15
+
+    def get_history(self, stock):
+        """下载数据 (通过适配器)"""
+        symbol = stock['symbol']
+        start = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")
+        end = datetime.now().strftime("%Y%m%d")
+        # 直接调用适配器
+        return data_provider.get_history_price(symbol, start, end)
+
+    def mine(self):
+        print(f">>> [2/5] 开始同行业CP挖掘...")
+        
+        # 1. 并发下载
+        all_series = []
+        meta_map = {s['symbol']: s for s in self.stock_list}
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            results = executor.map(self.get_history, self.stock_list)
+            for res in results:
+                if res is not None and len(res) > 200:
+                    all_series.append(res)
+        
+        if not all_series: return []
+        price_df = pd.concat(all_series, axis=1).dropna()
+        cols = price_df.columns
+        valid_pairs = []
+
+        # 2. 挖掘计算
+        for i in range(len(cols)):
+            for j in range(i + 1, len(cols)):
+                code_a, code_b = cols[i], cols[j]
+                
+                # --- 核心：不同行业跳过 ---
+                if meta_map[code_a]['sector'] != meta_map[code_b]['sector']: continue
+                
+                s1, s2 = price_df[code_a], price_df[code_b]
+                
+                # 相关性初筛
+                if s1.corr(s2) < 0.85: continue
+                
+                # 协整性终筛
+                score, pvalue, _ = coint(s1, s2)
+                
+                # 使用配置的阈值
+                if pvalue < settings.PAIR_P_THRESHOLD:
+                    valid_pairs.append({
+                        'A': code_a, 'A_name': meta_map[code_a]['name'],
+                        'B': code_b, 'B_name': meta_map[code_b]['name'],
+                        'p_value': pvalue
+                    })
+
+        valid_pairs.sort(key=lambda x: x['p_value'])
+        return valid_pairs[:self.max_pairs]
+
+==================================================
+FILE_PATH: app/data_provider.py
+==================================================
+import akshare as ak
+import pandas as pd
+import time
+from tenacity import retry, stop_after_attempt, wait_fixed
+from config import settings
+
+class DataProvider:
+    """
+    数据适配层：隔离 AkShare 的不稳定性
+    所有业务代码只调用这里的方法
+    """
+
+    @staticmethod
+    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
+    def get_history_price(symbol, start_date, end_date, adjust="qfq"):
+        """
+        获取个股历史行情 (带重试)
+        返回: pd.Series (Index=Date, Value=Close)
+        """
+        try:
+            # AkShare 接口
+            df = ak.stock_zh_a_hist(symbol=symbol, start_date=start_date, end_date=end_date, adjust=adjust)
+            if df.empty: return pd.Series()
+            
+            # 标准化清洗
+            df['日期'] = pd.to_datetime(df['日期'])
+            series = df.set_index('日期')['收盘']
+            series.name = symbol
+            
+            # 防封IP休眠
+            time.sleep(settings.DATA_REQUEST_SLEEP)
+            return series
+        except Exception:
+            return pd.Series()
+
+    @staticmethod
+    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
+    def get_sector_list():
+        """获取全市场板块列表"""
+        df = ak.stock_board_industry_name_em()
+        return df['板块名称'].tolist()
+
+    @staticmethod
+    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
+    def get_sector_stocks(sector_name):
+        """获取板块成分股，并清洗字段名"""
+        df = ak.stock_board_industry_cons_em(symbol=sector_name)
+        # 统一重命名，防止 AkShare 变动
+        df = df.rename(columns={
+            '代码': 'symbol', '名称': 'name', '最新价': 'price',
+            '市盈率-动态': 'pe', '总市值': 'market_cap', '换手率': 'turnover'
+        })
+        time.sleep(settings.DATA_REQUEST_SLEEP)
+        return df
+
+    @staticmethod
+    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
+    def get_index_daily(symbol="sh000300"):
+        """获取指数数据用于风控"""
+        df = ak.stock_zh_index_daily(symbol=symbol)
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+
+    @staticmethod
+    def get_news_summary(symbol):
+        """获取新闻 (不重试，失败就算了)"""
+        try:
+            df = ak.stock_news_em(symbol=symbol)
+            return "\n".join(df['新闻标题'].head(3).tolist())
+        except:
+            return ""
+
+# 导出单例
+data_provider = DataProvider()
+
+==================================================
+FILE_PATH: app/content_manager.py
+==================================================
+class ContentManager:
+    """
+    文案生成器：负责将结构化数据转化为人类可读的文本
+    实现了 '交易员' 和 '观察者' 两种人格
+    """
+
+    def private_report(self, pair, z_score, action, news_fact):
+        """
+        生成私有交易指令 (面向自己)
+        特点：直接、粗暴、带操作建议
+        """
+        return f"""### ⚡ Titan-Lite 交易指令
+
+**标的**: {pair}
+**信号**: {action} ‼️
+**Z-Score**: {z_score:.2f} (已突破阈值)
+
+------------------
+**舆情速查 (AI去噪)**:
+{news_fact}
+------------------
+
+**操作建议**:
+1. 现价开仓，严格执行配对比例。
+2. 若 Z-Score 回归至 0 附近平仓。
+3. 若 Z-Score 扩大至 3.0 则止损。
+"""
+
+    def public_article(self, pair, z_score, news_fact):
+        """
+        生成公众号素材 (面向公众)
+        特点：客观、学术、合规、无投资建议
+        """
+        # 计算概率：Z=2.0 对应 95% 置信度
+        probability = "95%" if abs(z_score) < 3 else "99%"
+        
+        return f"""## 📈 市场数据观察日报
+
+**关注对象**: {pair}
+**统计现象**: 
+今日模型监测显示，两者价差偏离度达到 **{z_score:.2f}** 倍标准差。
+从统计学正态分布来看，该事件发生的概率小于 5%，属于历史极端区间。
+
+**背景梳理 (AI Fact Check)**:
+{news_fact}
+
+------------------
+*声明：*
+*本文内容由 Titan-Lite 算法自动生成，仅用于展示统计学模型在金融数据分析中的应用。*
+*文中所述不构成任何投资建议，市场有风险，独立判断最重要。*
+"""
+
+==================================================
+FILE_PATH: app/macro_risk.py
+==================================================
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+from data_provider import data_provider
+from config import settings
+
+class MacroRisk:
+    def check(self):
+        try:
+            # 调用适配器
+            df = data_provider.get_index_daily("sh000300")
+            
+            # 取最近半年
+            start_dt = datetime.now() - timedelta(days=180)
+            df = df[df['date'] >= start_dt].sort_values('date')
+            
+            # 计算指标
+            df['pct'] = df['close'].pct_change()
+            vol = df['pct'].tail(20).std() * np.sqrt(252)
+            recent_high = df['close'].tail(10).max()
+            drawdown = (df['close'].iloc[-1] - recent_high) / recent_high
+            
+            msg = f"波动率:{vol:.1%}, 回撤:{drawdown:.1%}"
+            
+            # 使用配置阈值
+            if vol > settings.MACRO_VOL_THRESHOLD: 
+                return False, f"⛔ 恐慌熔断 ({msg})"
+            if drawdown < -0.10: 
+                return False, f"⛔ 崩盘熔断 ({msg})"
+                
+            return True, f"✅ 市场平稳 ({msg})"
+        except:
+            return True, "⚠️ 风控数据缺失"
+
+==================================================
+FILE_PATH: app/screener.py
+==================================================
+from data_provider import data_provider
+from config import settings
+import time
+import random
+
+def run_screener():
+    print(">>> [1/5] 启动全市场扫描 (Smart Screener)...")
+    
+    # 1. 获取所有行业
+    try:
+        all_sectors = data_provider.get_sector_list()
+    except:
+        # 保底逻辑
+        all_sectors = ["酿酒行业", "电池", "半导体", "银行"]
+        
+    all_candidates = []
+    
+    # 2. 遍历行业 (演示模式取前10个，生产环境请去掉切片)
+    # for sector in all_sectors:
+    for sector in all_sectors[:10]: 
+        try:
+            # 调用适配器获取数据
+            df = data_provider.get_sector_stocks(sector)
+            
+            # --- 财务过滤 ---
+            # 剔除亏损(PE<0), 剔除泡沫(PE>100), 剔除僵尸(换手<0.3)
+            df = df[(df['pe'] > 0) & (df['pe'] < 100) & (df['turnover'] > 0.3)]
+            
+            # --- 龙头法则 ---
+            # 按市值排序，取配置的前 N 名
+            leaders = df.sort_values(by='market_cap', ascending=False).head(settings.SCREENER_TOP_N)
+            leaders['sector'] = sector # 打上行业标签
+            
+            all_candidates.extend(leaders[['symbol', 'name', 'sector', 'market_cap']].to_dict(orient='records'))
+            
+            # 随机休眠
+            time.sleep(random.uniform(0.1, 0.3))
+            
+        except Exception as e:
+            print(f"扫描板块 {sector} 失败: {e}")
+            continue
+            
+    # 去重
+    unique = {s['symbol']: s for s in all_candidates}
+    final_list = list(unique.values())
+    
+    print(f"筛选完成，共入选 {len(final_list)} 只龙头。")
+    return final_list
+
+==================================================
+FILE_PATH: app/strategy.py
+==================================================
+import pandas as pd
+from datetime import datetime, timedelta
+
+# 引入所有模块
+from config import settings
+from data_provider import data_provider
+from wecom import WeComBot
+from macro_risk import MacroRisk
+from news_analyzer import NewsAnalyzer
+from chart_painter import ChartPainter
+from content_manager import ContentManager
+from screener import run_screener
+from pair_miner import PairMiner
+from ltcm_math import run_kalman
+
+class TitanStrategy:
+    def __init__(self):
+        self.bot = WeComBot()
+        self.risk = MacroRisk()
+        self.news = NewsAnalyzer()
+        self.painter = ChartPainter()
+        self.content = ContentManager()
+
+    def execute(self):
+        print(">>> Titan-Lite v3.2 启动...")
+
+        # 1. 宏观风控
+        is_safe, risk_msg = self.risk.check()
+        if not is_safe:
+            self.bot.send_markdown(f"# ⛔ 系统熔断\n{risk_msg}", mode="private")
+            return
+
+        # 2. 漏斗 & 挖掘
+        candidates = run_screener()
+        if not candidates: return
+        pairs = PairMiner(candidates).mine()
+        if not pairs: return
+
+        # 3. 策略循环
+        start = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")
+        end = datetime.now().strftime("%Y%m%d")
+
+        for pair in pairs:
+            try:
+                # 调用适配器获取数据
+                s1 = data_provider.get_history_price(pair['A'], start, end)
+                s2 = data_provider.get_history_price(pair['B'], start, end)
+                
+                df = pd.concat([s1, s2], axis=1).dropna()
+                df.columns = ['A', 'B']
+                if len(df) < 100: continue
+
+                # 数学计算
+                beta, alpha = run_kalman(df['B'], df['A'])
+                spread = df['A'] - (beta * df['B'] + alpha)
+                z_score = (spread - spread.rolling(30).mean()) / spread.rolling(30).std()
+                curr_z = z_score.iloc[-1]
+
+                # 信号触发 (使用配置阈值)
+                if abs(curr_z) > settings.TRADE_Z_THRESHOLD:
+                    pair_name = f"{pair['A_name']} vs {pair['B_name']}"
+                    action = "卖A买B" if curr_z > 0 else "买A卖B"
+                    
+                    # 舆情 & 绘图 & 文案
+                    news_fact = self.news.analyze(pair_name, pair['A'], pair['B'])
+                    img_priv = self.painter.draw(pair_name, df, z_score, "private")
+                    img_pub = self.painter.draw(pair_name, df, z_score, "public")
+                    
+                    mid_priv = self.bot.upload_image(img_priv)
+                    mid_pub = self.bot.upload_image(img_pub)
+                    
+                    txt_priv = self.content.private_report(pair_name, curr_z, action, news_fact)
+                    txt_pub = self.content.public_article(pair_name, curr_z, news_fact)
+                    
+                    # 推送
+                    self.bot.send_markdown(txt_priv, "private")
+                    self.bot.send_image(mid_priv, "private")
+                    
+                    self.bot.send_markdown(txt_pub, "public")
+                    self.bot.send_image(mid_pub, "public")
+                    
+                    print(f"推送完成: {pair_name}")
+
+            except Exception as e:
+                print(f"处理失败: {e}")
+
+def run_job():
+    TitanStrategy().execute()
+
+==================================================
+FILE_PATH: app/config.py
+==================================================
+import os
+import sys
+
+class Config:
+    """
+    配置加载器
+    从环境变量中读取配置，如果缺失则报错或使用默认值
+    """
+    try:
+        # --- WeCom ---
+        WECOM_CORP_ID = os.environ['WECOM_CORP_ID']
+        WECOM_CORP_SECRET = os.environ['WECOM_CORP_SECRET']
+        WECOM_AGENTS = {
+            "private": os.environ['WECOM_AGENT_ID_PRIVATE'],
+            "public": os.environ['WECOM_AGENT_ID_PUBLIC']
+        }
+        
+        # --- LLM ---
+        LLM_API_KEY = os.environ['LLM_API_KEY']
+        LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.deepseek.com')
+        
+        # --- Strategy ---
+        SCREENER_TOP_N = int(os.environ.get('SCREENER_TOP_N', 3))
+        PAIR_P_THRESHOLD = float(os.environ.get('PAIR_P_VALUE_THRESHOLD', 0.05))
+        TRADE_Z_THRESHOLD = float(os.environ.get('TRADE_Z_THRESHOLD', 1.5))
+        MACRO_VOL_THRESHOLD = float(os.environ.get('MACRO_VOL_THRESHOLD', 0.35))
+        
+        # --- Data Source ---
+        DATA_RETRY_ATTEMPTS = int(os.environ.get('DATA_RETRY_ATTEMPTS', 3))
+        DATA_RETRY_WAIT = int(os.environ.get('DATA_RETRY_WAIT', 2))
+        DATA_REQUEST_SLEEP = float(os.environ.get('DATA_REQUEST_SLEEP', 0.5))
+        
+    except KeyError as e:
+        print(f"❌ 启动失败: 缺少环境变量配置 {e}")
+        print("请检查 .env 文件")
+        sys.exit(1)
+
+# 单例模式导出
+settings = Config()
+
+==================================================
+FILE_PATH: app/news_analyzer.py
+==================================================
+from openai import OpenAI
+from data_provider import data_provider
+from config import settings
+
+class NewsAnalyzer:
+    def __init__(self):
+        # 使用配置
+        self.client = OpenAI(
+            api_key=settings.LLM_API_KEY, 
+            base_url=settings.LLM_BASE_URL
+        )
+
+    def analyze(self, pair_name, code_a, code_b):
+        # 调用适配器获取原始新闻
+        news_a = data_provider.get_news_summary(code_a)
+        news_b = data_provider.get_news_summary(code_b)
+        
+        prompt = f"""
+        你是一个客观的金融分析师。
+        股票A: {news_a}
+        股票B: {news_b}
+        请用【一句话】概括这两只股票近期的客观利好或利空事实。
+        严禁预测。如果没有大事，回答“无重大舆情”。
+        """
+        try:
+            resp = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1
+            )
+            return resp.choices[0].message.content
+        except:
+            return "AI分析不可用"
+
