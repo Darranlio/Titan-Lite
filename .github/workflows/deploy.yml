@@ -1,6 +1,6 @@
 name: Titan-Lite CI/CD
 
-# 触发条件：当 main 分支有代码 push 时
+# 触发条件：当 master 分支有代码 push 时
 on:
   push:
     branches: [ "master" ]
@@ -36,6 +36,8 @@ jobs:
           context: ./app
           push: true
           tags: ghcr.io/${{ env.OWNER }}/titan-core:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # 2. 构建文档镜像 (Wiki)
       - name: Build and push Knowledge Base
@@ -44,6 +46,8 @@ jobs:
           context: ./docs
           push: true
           tags: ghcr.io/${{ env.OWNER }}/titan-wiki:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # === 任务2: 部署到阿里云服务器 ===
   deploy:
