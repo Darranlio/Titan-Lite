@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from contextlib import asynccontextmanager
-from strategy import run_job
+from strategy import run_job, run_single
 from backtester import backtester
 
 @asynccontextmanager
@@ -28,9 +28,14 @@ app.add_middleware(
 def root(): return {"status": "ok", "version": "v2.1-institutional"}
 
 @app.post("/run")
-def manual():
+def manual_batch():
     run_job()
-    return {"msg": "strategy triggered"}
+    return {"msg": "batch strategy triggered"}
+
+@app.post("/analyze/{symbol}")
+def analyze_one(symbol: str):
+    success = run_single(symbol)
+    return {"status": "success" if success else "failed", "symbol": symbol}
 
 @app.get("/backtest/{symbol}")
 def run_backtest(symbol: str):
