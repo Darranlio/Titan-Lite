@@ -1,1 +1,0 @@
-import{_ as e,c as t,o as n}from"./chunks/framework.Cee10E_e.js";const _=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"notes/linux/commands.md","filePath":"notes/linux/commands.md"}'),a={name:"notes/linux/commands.md"};function o(s,c,r,m,d,i){return n(),t("div")}const l=e(a,[["render",o]]);export{_ as __pageData,l as default};

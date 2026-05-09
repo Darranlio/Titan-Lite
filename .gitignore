@@ -1,6 +1,10 @@
 __pycache__/
 node_modules/
-.vitepress/dist
 .htpasswd
 .env
 app/data/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+.DS_Store
+*.pyc
+app/trading_agents_src/.git/
