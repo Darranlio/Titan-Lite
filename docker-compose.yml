@@ -1,13 +1,13 @@
 services:
   # 服务A: 量化核心
   quant-core:
-    # build: ./app
-    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-core:latest
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
     container_name: titan_core
     restart: always
-    # === 关键：加载环境变量 ===
     env_file:
-      - .env
+      - app/.env
     environment:
       - TZ=Asia/Shanghai
     volumes:
@@ -17,17 +17,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'   # 限制1核CPU
-          memory: 1G    # 限制1G内存
+          cpus: '1.0'
+          memory: 1.5G # 调高一点，Agent 需要更多内存
 
-  # 服务B: 私有文档站
+  # 服务B: 私有文档站 (Nginx 渲染静态文件)
   knowledge-base:
-    # build: ./docs
-    image: crpi-r07w6kgm2wmfn52i.cn-beijing.personal.cr.aliyuncs.com/titan-lite-repo/titan-wiki:latest
+    image: nginx:alpine
     container_name: titan_wiki
     restart: always
     ports:
       - "8080:80"
     volumes:
-      # 挂载密码文件
-      - ./docs/.htpasswd:/etc/nginx/.htpasswd
+      - ./docs/.vitepress/dist:/usr/share/nginx/html
+      - ./docs/nginx.conf:/etc/nginx/conf.d/default.conf:ro
