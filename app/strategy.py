@@ -1,28 +1,24 @@
 import pandas as pd
 from datetime import datetime, timedelta
+import os
 
-# 引入所有模块
 from config import settings
 from data_provider import data_provider
 from wecom import WeComBot
 from macro_risk import MacroRisk
-from news_analyzer import NewsAnalyzer
-from chart_painter import ChartPainter
-from content_manager import ContentManager
-from screener import run_screener
-from pair_miner import PairMiner
-from ltcm_math import run_kalman
+from news_spider import news_spider
+from valuation_screener import valuation_screener
+from agent_bridge import agent_bridge
+from verification_engine import verification_engine
+from finnhub_provider import finnhub_provider
 
-class TitanStrategy:
+class TitanStrategyV2:
     def __init__(self):
         self.bot = WeComBot()
         self.risk = MacroRisk()
-        self.news = NewsAnalyzer()
-        self.painter = ChartPainter()
-        self.content = ContentManager()
 
     def execute(self):
-        print(">>> Titan-Lite v3.2 启动...")
+        print(">>> Titan-Lite v4.1 (Verification Layer) 启动...")
 
         # 1. 宏观风控
         is_safe, risk_msg = self.risk.check()
@@ -30,59 +26,98 @@ class TitanStrategy:
             self.bot.send_markdown(f"# ⛔ 系统熔断\n{risk_msg}", mode="private")
             return
 
-        # 2. 漏斗 & 挖掘
-        candidates = run_screener()
+        # 2. 标的发现与估值筛选 (FMP 数据)
+        candidates = valuation_screener.run()
         if not candidates: return
-        pairs = PairMiner(candidates).mine()
-        if not pairs: return
 
-        # 3. 策略循环
-        start = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")
-        end = datetime.now().strftime("%Y%m%d")
-
-        for pair in pairs:
-            try:
-                # 调用适配器获取数据
-                s1 = data_provider.get_history_price(pair['A'], start, end)
-                s2 = data_provider.get_history_price(pair['B'], start, end)
+        # 3. 深度研判循环
+        for item in candidates:
+            symbol = item['symbol']
+            
+            # --- V2.1 真伪鉴别层 ---
+            news = finnhub_provider.get_company_news(symbol)
+            fact_check, fact_score = verification_engine.verify_news(symbol, news)
+            divergence_msg = verification_engine.check_divergence(symbol)
+            insider_msg = verification_engine.get_insider_signal(symbol)
+            
+            # 将鉴伪结果注入 Agent 上下文
+            v_context = f"\n[事实核查报告]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价表现: {divergence_msg}\n- 高管行为: {insider_msg}\n"
+            
+            # 调用 TradingAgents
+            decision = agent_bridge.analyze_ticker(symbol, context_extra=v_context)
+            
+            if decision:
+                # 4. 结果整理与可视化
+                self.save_to_web(symbol, item, decision, {
+                    'fact_check': fact_check,
+                    'fact_score': fact_score,
+                    'divergence': divergence_msg,
+                    'insider': insider_msg
+                })
                 
-                df = pd.concat([s1, s2], axis=1).dropna()
-                df.columns = ['A', 'B']
-                if len(df) < 100: continue
+                # 5. 推送核心决策
+                self.push_to_wecom(symbol, item, decision, divergence_msg)
 
-                # 数学计算
-                beta, alpha = run_kalman(df['B'], df['A'])
-                spread = df['A'] - (beta * df['B'] + alpha)
-                z_score = (spread - spread.rolling(30).mean()) / spread.rolling(30).std()
-                curr_z = z_score.iloc[-1]
+    def save_to_web(self, symbol, item, decision, verify_data):
+        """
+        将决策报告保存为 Markdown，由 VitePress 渲染 (V2.1 增强版)
+        """
+        report_path = f"docs/projects/titan-lite/reports/{symbol}.md"
+        os.makedirs(os.path.dirname(report_path), exist_ok=True)
+        
+        content = f"""---
+title: {symbol} 深度研判报告
+date: {datetime.now().strftime('%Y-%m-%d')}
+---
 
-                # 信号触发 (使用配置阈值)
-                if abs(curr_z) > settings.TRADE_Z_THRESHOLD:
-                    pair_name = f"{pair['A_name']} vs {pair['B_name']}"
-                    action = "卖A买B" if curr_z > 0 else "买A卖B"
-                    
-                    # 舆情 & 绘图 & 文案
-                    news_fact = self.news.analyze(pair_name, pair['A'], pair['B'])
-                    img_priv = self.painter.draw(pair_name, df, z_score, "private")
-                    img_pub = self.painter.draw(pair_name, df, z_score, "public")
-                    
-                    mid_priv = self.bot.upload_image(img_priv)
-                    mid_pub = self.bot.upload_image(img_pub)
-                    
-                    txt_priv = self.content.private_report(pair_name, curr_z, action, news_fact)
-                    txt_pub = self.content.public_article(pair_name, curr_z, news_fact)
-                    
-                    # 推送
-                    self.bot.send_markdown(txt_priv, "private")
-                    self.bot.send_image(mid_priv, "private")
-                    
-                    self.bot.send_markdown(txt_pub, "public")
-                    self.bot.send_image(mid_pub, "public")
-                    
-                    print(f"推送完成: {pair_name}")
+# 📊 {symbol} 深度研判报告 ({datetime.now().strftime('%Y-%m-%d')})
 
-            except Exception as e:
-                print(f"处理失败: {e}")
+## 1. 估值概览 (Valuation)
+- **当前价格**: ${item['current_price']}
+- **FMP 目标均价**: ${item['target_price']}
+- **预期涨幅**: {item['upside']:.2%}
+- **PE/ROE**: {item['pe']:.1f} / {item['roe']:.1%}
+
+## 2. 🛡️ 真伪鉴别 (Verification Layer)
+- **事实核查评分**: `{verify_data['fact_score']}`
+- **事实核查结论**: {verify_data['fact_check']}
+- **量价背离监控**: **{verify_data['divergence']}**
+- **高管行为监控**: {verify_data['insider']}
+
+## 3. 🧠 智能体研判 (Agent Decision)
+- **最终决策**: **{decision.get('action', 'HOLD')}**
+- **建议理由**: 
+> {decision.get('rationale', '无理由')}
+
+## 4. ⚖️ 辩论摘要
+{decision.get('debate_summary', '详情见日志')}
+
+---
+*本报告由 Titan-Lite V2.1 机构级系统自动生成。*
+"""
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        self.update_report_index(symbol)
+
+    def update_report_index(self, symbol):
+        index_path = "docs/projects/titan-lite/reports/index.md"
+        line = f"- [{symbol} 研判报告](./{symbol}.md) - {datetime.now().strftime('%Y-%m-%d')}\n"
+        
+        if not os.path.exists(index_path):
+            with open(index_path, "w") as f:
+                f.write("# 📑 历史研研报列表\n\n")
+        
+        with open(index_path, "a") as f:
+            f.write(line)
+
+    def push_to_wecom(self, symbol, item, decision, divergence):
+        msg = f"""# 🚀 深度研判: {symbol}
+**最终决策**: {decision.get('action')}
+**量价验证**: {divergence[:50]}...
+---
+**核心逻辑**: {decision.get('rationale')[:150]}...
+"""
+        self.bot.send_markdown(msg, mode="private")
 
 def run_job():
-    TitanStrategy().execute()
+    TitanStrategyV2().execute()
