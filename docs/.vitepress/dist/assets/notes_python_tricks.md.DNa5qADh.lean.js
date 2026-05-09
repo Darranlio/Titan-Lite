@@ -1,0 +1,1 @@
+import{_ as t,c as e,o}from"./chunks/framework.Cee10E_e.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"notes/python/tricks.md","filePath":"notes/python/tricks.md"}'),s={name:"notes/python/tricks.md"};function r(n,a,c,i,p,_){return o(),e("div")}const f=t(s,[["render",r]]);export{m as __pageData,f as default};

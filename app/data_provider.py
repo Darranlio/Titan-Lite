@@ -1,74 +1,93 @@
-import akshare as ak
+import yfinance as ticker_info
+import yfinance as yf
 import pandas as pd
 import time
+import requests
+from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_fixed
+from datetime import datetime, timedelta
 from config import settings
 
 class DataProvider:
     """
-    数据适配层：隔离 AkShare 的不稳定性
-    所有业务代码只调用这里的方法
+    Titan-Lite V2 数据适配层 (美港股优先)
+    基于 yfinance 和自定义爬虫获取行情与投行目标价
     """
 
     @staticmethod
-    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
-    def get_history_price(symbol, start_date, end_date, adjust="qfq"):
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    def get_history_price(symbol, start_date=None, end_date=None, interval="1d"):
         """
-        获取个股历史行情 (带重试)
-        返回: pd.Series (Index=Date, Value=Close)
+        获取个股历史行情 (yfinance)
+        :param symbol: 股票代码 (如 'AAPL', '0700.HK')
         """
         try:
-            # AkShare 接口
-            df = ak.stock_zh_a_hist(symbol=symbol, start_date=start_date, end_date=end_date, adjust=adjust)
+            # yfinance 获取数据
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(start=start_date, end=end_date, interval=interval)
             if df.empty: return pd.Series()
             
             # 标准化清洗
-            df['日期'] = pd.to_datetime(df['日期'])
-            series = df.set_index('日期')['收盘']
+            series = df['Close']
             series.name = symbol
-            
-            # 防封IP休眠
-            time.sleep(settings.DATA_REQUEST_SLEEP)
             return series
-        except Exception:
+        except Exception as e:
+            print(f"yfinance 获取行情失败 {symbol}: {e}")
             return pd.Series()
 
     @staticmethod
-    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
-    def get_sector_list():
-        """获取全市场板块列表"""
-        df = ak.stock_board_industry_name_em()
-        return df['板块名称'].tolist()
-
-    @staticmethod
-    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
-    def get_sector_stocks(sector_name):
-        """获取板块成分股，并清洗字段名"""
-        df = ak.stock_board_industry_cons_em(symbol=sector_name)
-        # 统一重命名，防止 AkShare 变动
-        df = df.rename(columns={
-            '代码': 'symbol', '名称': 'name', '最新价': 'price',
-            '市盈率-动态': 'pe', '总市值': 'market_cap', '换手率': 'turnover'
-        })
-        time.sleep(settings.DATA_REQUEST_SLEEP)
-        return df
-
-    @staticmethod
-    @retry(stop=stop_after_attempt(settings.DATA_RETRY_ATTEMPTS), wait=wait_fixed(settings.DATA_RETRY_WAIT))
-    def get_index_daily(symbol="sh000300"):
-        """获取指数数据用于风控"""
-        df = ak.stock_zh_index_daily(symbol=symbol)
-        df['date'] = pd.to_datetime(df['date'])
-        return df
-
-    @staticmethod
-    def get_news_summary(symbol):
-        """获取新闻 (不重试，失败就算了)"""
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    def get_analyst_info(symbol):
+        """
+        获取投行目标价与评级 (Analyst Targets)
+        """
         try:
-            df = ak.stock_news_em(symbol=symbol)
-            return "\n".join(df['新闻标题'].head(3).tolist())
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            
+            # 提取关键估值字段
+            result = {
+                'currentPrice': info.get('currentPrice'),
+                'targetMeanPrice': info.get('targetMeanPrice'),
+                'targetLowPrice': info.get('targetLowPrice'),
+                'targetHighPrice': info.get('targetHighPrice'),
+                'recommendationKey': info.get('recommendationKey'), # e.g., 'buy', 'strong_buy'
+                'numberOfAnalystOpinions': info.get('numberOfAnalystOpinions')
+            }
+            
+            # 计算潜在涨幅
+            if result['currentPrice'] and result['targetMeanPrice']:
+                result['upside'] = (result['targetMeanPrice'] - result['currentPrice']) / result['currentPrice']
+            else:
+                result['upside'] = 0
+                
+            return result
+        except Exception as e:
+            print(f"获取分析师数据失败 {symbol}: {e}")
+            return {}
+
+    @staticmethod
+    def get_company_news(symbol, limit=5):
+        """
+        获取公司最新新闻
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            news = ticker.news
+            return news[:limit]
         except:
-            return ""
+            return []
+
+    @staticmethod
+    def get_market_trending(market="US"):
+        """
+        获取市场热点标的 (初步通过 yfinance 模拟，后期可接入新闻爬虫)
+        """
+        # 这里先占位，后续 Phase 2 会开发专门的 news_spider
+        if market == "US":
+            return ["AAPL", "NVDA", "TSLA", "MSFT", "GOOGL", "AMZN", "META"]
+        else:
+            return ["0700.HK", "9988.HK", "3690.HK", "1810.HK", "9888.HK"]
 
 # 导出单例
 data_provider = DataProvider()

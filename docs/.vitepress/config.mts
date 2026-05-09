@@ -96,6 +96,7 @@ export default withMermaid(defineConfig({
             { text: '项目简介', link: '/projects/titan-lite/index.md' }, // 对应 index.md
             { text: '系统架构设计', link: '/projects/titan-lite/design_doc.md' },
             { text: '核心策略算法', link: '/projects/titan-lite/strategy.md' },
+            { text: '研报库 (NEW)', link: '/projects/titan-lite/reports/' },
             { text: 'API 接口文档', link: '/projects/titan-lite/api.md' },
             { text: '部署运维', link: '/projects/titan-lite/deploy.md' }
           ]

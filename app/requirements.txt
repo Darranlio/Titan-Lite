@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 apscheduler
-akshare
+yfinance
 pandas
 numpy
 pykalman
@@ -12,3 +12,8 @@ statsmodels
 scipy
 openai
 tenacity
+beautifulsoup4
+lxml
+langgraph
+langchain_openai
+python-dotenv
