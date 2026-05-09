@@ -11,8 +11,8 @@ class VerificationEngine:
     """
     def __init__(self):
         self.client = OpenAI(
-            api_key=settings.LLM_API_KEY if settings.LLM_PROVIDER == 'openai' else settings.GOOGLE_API_KEY,
-            base_url=settings.LLM_BASE_URL if settings.LLM_PROVIDER == 'openai' else "https://generativelanguage.googleapis.com/v1beta/openai/"
+            api_key=settings.LLM_API_KEY,
+            base_url=settings.LLM_BASE_URL
         )
 
     def verify_news(self, symbol, news_list):
@@ -37,7 +37,7 @@ class VerificationEngine:
         """
         try:
             resp = self.client.chat.completions.create(
-                model="gemini-2.0-flash-exp" if settings.LLM_PROVIDER == 'google' else "deepseek-chat",
+                model="deepseek-chat",
                 messages=[{"role": "user", "content": prompt}]
             )
             content = resp.choices[0].message.content
@@ -52,13 +52,14 @@ class VerificationEngine:
         量价背离验证：Sentiment vs. Price Action
         """
         # 获取 K 线数据 (yfinance)
-        end = pd.Timestamp.now()
+        real_today = pd.Timestamp.now()
+        end = real_today
         start = end - pd.Timedelta(days=30)
         
         # 为了计算 OBV，我们需要 Close 和 Volume
         import yfinance as yf
         ticker = yf.Ticker(symbol)
-        df = ticker.history(start=start, end=end)
+        df = ticker.history(start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
         
         if len(df) < 5: return "数据不足，无法验证背离"
         

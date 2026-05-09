@@ -20,8 +20,8 @@ class Config:
     # --- LLM ---
     LLM_API_KEY = os.environ.get('LLM_API_KEY', '')
     LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.deepseek.com')
-    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
-    LLM_PROVIDER = os.environ.get('LLM_PROVIDER', 'openai') # 'openai' or 'google'
+    DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
+    LLM_PROVIDER = os.environ.get('LLM_PROVIDER', 'deepseek') # 'deepseek', 'openai' or 'google'
     
     # --- Professional Data Sources (V2.1) ---
     FINNHUB_API_KEY = os.environ.get('FINNHUB_API_KEY', '')

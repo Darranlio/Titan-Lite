@@ -26,28 +26,12 @@ import ControlPanel from './ControlPanel.vue'
 
 | 模块 | 说明 | 链接 |
 | :--- | :--- | :--- |
-| **📊 架构设计** | 系统的顶层设计、数据流向与数学模型公式 | [查看文档](./design_doc.md) |
-| **🧠 策略算法** | 卡尔曼滤波、Z-Score 信号生成逻辑 (施工中) | [查看文档](./strategy.md) |
-| **🔌 API 接口** | 后端 FastAPI 接口定义与调用方式 (施工中) | [查看文档](./api.md) |
-| **🚀 部署运维** | Docker 常用指令、环境恢复与日志查看 (施工中) | [查看文档](./deploy.md) |
-
----
-
-## 🛠️ 技术栈概览
-
-本系统采用 **微服务架构**，主要包含以下组件：
-
-- **Quant Core**: 基于 `Python` + `Pandas` + `Kalman Filter` 的策略计算核心。
-- **Data Engine**: 封装 `AkShare`，实现带重试机制的数据清洗与存储。
-- **Notification**: 集成 **企业微信** Webhook，实现交易信号实时推送。
-- **Web UI**: 基于 `VitePress` (即本网站) 的静态知识库与仪表盘。
-
-## 📅 近期开发计划
-
-- [x] **Phase 1**: 基础环境搭建 (Docker, Nginx, Python)
-- [x] **Phase 2**: 知识库 Wiki 上线
-- [ ] **Phase 3**: 策略回测模块开发 (进行中...)
-- [ ] **Phase 4**: 实盘信号对接
+| **📑 研报档案** | 深度个股研报、动态 Dashboard、历史评级 | [进入档案馆](./reports/index.md) |
+| **📊 架构设计** | 系统的顶层设计、数据流向与数学模型公式 | [查看文档](./design/design_doc.md) |
+| **🧠 策略算法** | 卡尔曼滤波、Z-Score 信号生成逻辑 | [查看文档](./design/strategy.md) |
+| **🔌 API 接口** | 后端 FastAPI 接口定义与调用方式 | [查看文档](./design/api.md) |
+| 🚀 部署运维 | Docker 常用指令、环境恢复与日志查看 | [查看文档](./design/deploy.md) |
+| **📖 使用手册** | 系统日常操作、命令速查 | [查看文档](./design/usage_guide.md) |
 
 ---
 

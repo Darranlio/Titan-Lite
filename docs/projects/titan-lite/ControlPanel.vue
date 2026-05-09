@@ -7,8 +7,8 @@ const ticker = ref('')
 const loadingBatch = ref(false)
 const loadingSingle = ref(false)
 
-// 基础配置：替换为你的真实后端地址
-const API_BASE = 'http://your-server-ip:8000'
+// 基础配置：本地开发设为 localhost，部署到服务器后请修改为你的阿里云公网 IP
+const API_BASE = 'http://localhost:8000'
 
 const runBatchAnalysis = async () => {
   loadingBatch.value = true

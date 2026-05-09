@@ -59,11 +59,15 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     config = get_config()
     curr_date_dt = pd.to_datetime(curr_date)
 
-    # Cache uses a fixed window (15y to today) so one file per symbol
-    today_date = pd.Timestamp.today()
-    start_date = today_date - pd.DateOffset(years=5)
+    # Cache uses a fixed window (5y to today) so one file per symbol
+    # Cap end_str at real today to avoid yfinance "possibly delisted" errors for future dates
+    real_today = pd.Timestamp.now().normalize()
+    start_date = real_today - pd.DateOffset(years=5)
     start_str = start_date.strftime("%Y-%m-%d")
-    end_str = today_date.strftime("%Y-%m-%d")
+    
+    # If simulation date (curr_date_dt) is in the past, we could cap end_str there,
+    # but for caching purposes, using real_today is usually better.
+    end_str = real_today.strftime("%Y-%m-%d")
 
     os.makedirs(config["data_cache_dir"], exist_ok=True)
     data_file = os.path.join(
@@ -74,16 +78,24 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     if os.path.exists(data_file):
         data = pd.read_csv(data_file, on_bad_lines="skip", encoding="utf-8")
     else:
-        data = yf_retry(lambda: yf.download(
-            symbol,
-            start=start_str,
-            end=end_str,
-            multi_level_index=False,
-            progress=False,
-            auto_adjust=True,
-        ))
-        data = data.reset_index()
-        data.to_csv(data_file, index=False, encoding="utf-8")
+        try:
+            data = yf_retry(lambda: yf.download(
+                symbol,
+                start=start_str,
+                end=end_str,
+                multi_level_index=False,
+                progress=False,
+                auto_adjust=True,
+            ))
+            if data.empty:
+                logger.error(f"yfinance returned no data for {symbol} (start={start_str}, end={end_str}). It might be delisted or connection issues.")
+                return pd.DataFrame()
+            
+            data = data.reset_index()
+            data.to_csv(data_file, index=False, encoding="utf-8")
+        except Exception as e:
+            logger.error(f"Failed to download data for {symbol}: {e}")
+            return pd.DataFrame()
 
     data = _clean_dataframe(data)
 
