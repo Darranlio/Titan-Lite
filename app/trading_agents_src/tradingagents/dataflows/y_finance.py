@@ -15,6 +15,16 @@ def get_YFin_data_online(
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")
 
+    # Cap dates at real today to avoid "possibly delisted" errors for future dates
+    real_today = pd.Timestamp.now().normalize()
+    start_dt = pd.to_datetime(start_date)
+    end_dt = pd.to_datetime(end_date)
+    
+    if end_dt > real_today:
+        end_date = real_today.strftime("%Y-%m-%d")
+    if start_dt > real_today:
+        start_date = (real_today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+
     # Create ticker object
     ticker = yf.Ticker(symbol.upper())
 

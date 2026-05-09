@@ -92,15 +92,33 @@ export default withMermaid(defineConfig({
       // -----------------------------------------
       '/projects/titan-lite/': [
         {
-          text: 'Titan-Lite 量化系统',
+          text: '📊 Titan-Lite 总览',
           items: [
-            { text: '项目简介', link: '/projects/titan-lite/index.md' },
-            { text: '🚀 快速上手 (必读)', link: '/projects/titan-lite/usage_guide.md' },
-            { text: '系统架构设计', link: '/projects/titan-lite/design_doc.md' },
-            { text: '核心策略算法', link: '/projects/titan-lite/strategy.md' },
-            { text: '研报库 (NEW)', link: '/projects/titan-lite/reports/' },
-            { text: 'API 接口文档', link: '/projects/titan-lite/api.md' },
-            { text: '部署运维', link: '/projects/titan-lite/deploy.md' }
+            { text: '控制面板 (主页)', link: '/projects/titan-lite/index' },
+          ]
+        },
+        {
+          text: '📂 个股档案馆',
+          collapsed: false,
+          items: [
+            { text: '研报索引目录', link: '/projects/titan-lite/reports/index' },
+          ]
+        },
+        {
+          text: '🏗️ 核心设计文档',
+          collapsed: false,
+          items: [
+            { text: '系统架构设计', link: '/projects/titan-lite/design/design_doc' },
+            { text: '核心策略逻辑', link: '/projects/titan-lite/design/strategy' },
+            { text: 'API 接口手册', link: '/projects/titan-lite/design/api' },
+          ]
+        },
+        {
+          text: '🚀 运维与使用',
+          collapsed: true,
+          items: [
+            { text: '使用手册', link: '/projects/titan-lite/design/usage_guide' },
+            { text: '部署运维指南', link: '/projects/titan-lite/design/deploy' },
           ]
         }
       ],

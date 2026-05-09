@@ -1,68 +1,166 @@
 import os
+import sys
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from config import settings
+from langchain_core.callbacks import BaseCallbackHandler
+
+class ConsoleStreamHandler(BaseCallbackHandler):
+    """
+    实时打印 Agent 思考过程的处理器 (精简版)
+    """
+    def on_chat_model_start(self, serialized, messages, **kwargs):
+        # 1. 尝试从 LangGraph 元数据中提取当前 Node (Agent) 的名称
+        metadata = kwargs.get("metadata", {})
+        node_name = metadata.get("langgraph_node", "")
+        
+        # 2. 如果没拿到，尝试从 serialized 中提取
+        if not node_name:
+            node_name = serialized.get("name", "")
+
+        # 3. 过滤掉内部状态转换消息
+        if messages and len(messages[0]) > 0:
+            last_msg = messages[0][-1]
+            content = ""
+            if isinstance(last_msg, dict):
+                content = last_msg.get('content', '')
+            elif hasattr(last_msg, 'content'):
+                content = str(last_msg.content)
+                
+            if "Continue" in content:
+                return 
+
+        display_name = node_name if node_name else "Agent"
+        model_name = serialized.get("kwargs", {}).get("model", "DeepSeek")
+        
+        print(f"\n[Thinking] {display_name} ({model_name}) 正在深度思考中...", flush=True)
+
+    def on_tool_start(self, serialized, input_str, **kwargs):
+        tool_name = serialized.get("name", "Unknown Tool")
+        if tool_name in ["_get_current_time"]: return
+        print(f"  [Tool] 正在调用工具: {tool_name}...", flush=True)
+
+    def on_tool_end(self, output, **kwargs):
+        pass # 减少数据打印，只看调用
 
 class AgentBridge:
     """
-    Titan-Lite 与 TradingAgents 的桥接层
+    Titan-Lite 与 TradingAgents 的桥接层 (增强日志版)
     """
     def __init__(self):
-        # 将 Titan-Lite 的配置映射到 TradingAgents 环境变量
-        if settings.LLM_PROVIDER == "google":
-            os.environ["GOOGLE_API_KEY"] = settings.GOOGLE_API_KEY
-        else:
-            os.environ["OPENAI_API_KEY"] = settings.LLM_API_KEY or "dummy-key-for-init"
-            os.environ["OPENAI_BASE_URL"] = settings.LLM_BASE_URL
+        # 映射配置
+        os.environ["OPENAI_API_KEY"] = settings.LLM_API_KEY
+        os.environ["OPENAI_BASE_URL"] = settings.LLM_BASE_URL
+        os.environ["DEEPSEEK_API_KEY"] = settings.LLM_API_KEY
         
         # 初始化配置
         self.config = DEFAULT_CONFIG.copy()
-        self.config["llm_provider"] = settings.LLM_PROVIDER
+        self.config["llm_provider"] = "deepseek" if "deepseek" in settings.LLM_BASE_URL.lower() else settings.LLM_PROVIDER
         
-        # 如果是 Google，指定模型名称
-        if settings.LLM_PROVIDER == "google":
+        # 针对不同 Provider 指定最佳模型
+        if "deepseek" in settings.LLM_BASE_URL.lower() or self.config["llm_provider"] == "deepseek":
+            self.config["deep_think_llm"] = "deepseek-chat"
+            self.config["quick_think_llm"] = "deepseek-chat"
+            print(">>> 已检测到 DeepSeek API，正在启动深度逻辑模式...")
+        elif settings.LLM_PROVIDER == "google":
             self.config["deep_think_llm"] = "gemini-2.0-flash"
             self.config["quick_think_llm"] = "gemini-2.0-flash"
         
         self.config["checkpoint_enabled"] = False 
         self.config["max_debate_rounds"] = 1 # 针对 2G 内存和速度优化，设为 1 轮
+        self.config["max_recur_limit"] = 50 # 限制递归次数，防止死循环
         
-        # 调试模式
-        self.agent_graph = TradingAgentsGraph(debug=False, config=self.config)
+        # 增加实时日志处理器
+        self.callbacks = [ConsoleStreamHandler()]
+        
+        # 注入配置
+        self.agent_graph = TradingAgentsGraph(
+            debug=True, 
+            config=self.config,
+            callbacks=self.callbacks
+        )
 
 
     def analyze_ticker(self, symbol, date=None, context_extra=""):
-        """
-        调用多智能体进行深度分析
-        :param symbol: 股票代码
-        :param date: 分析日期 (None 为今天)
-        :param context_extra: 额外的上下文（如事实核查报告）
-        """
         if date is None:
             from datetime import datetime
             date = datetime.now().strftime("%Y-%m-%d")
-            
-        print(f">>> [Agent] 启动多智能体深度研判: {symbol} @ {date}")
-        
-        # 将鉴伪报告注入到 TradingAgents 的全局 context 中
-        if context_extra:
-            print(f"--- 注入鉴伪报告 ---")
-            # 注意：这里我们可以通过环境变量或临时修改 config 的方式注入
-            # 更优雅的方式是修改 TradingAgents 的 prompt 模板，这里先通过注入Rationale占位
-            pass
+
+        print(f"\n" + "="*50)
+        print(f">>> [Agent] 启动深度研判: {symbol} @ {date}")
+        print("="*50 + "\n")
 
         try:
-            # 调用 TradingAgents 核心逻辑
-            # 返回: (final_state, decision_dict)
-            _, decision = self.agent_graph.propagate(symbol, date)
+            # 1. 调用强大的多智能体图 (TradingAgents)
+            # final_state: 完整的状态机字典
+            # rating: 提取出来的评级字符串 (e.g., "BUY")
+            final_state, rating = self.agent_graph.propagate(symbol, date)
             
-            # 如果有鉴伪报告，将其合并到 decision 中供 Web 显示
+            # 2. 构建结构化的决策对象
+            decision = {
+                "action": rating,
+                "rationale": final_state.get("final_trade_decision", "无详细理由"),
+                "reports": {
+                    'market': final_state.get('market_report'),
+                    'sentiment': final_state.get('sentiment_report'),
+                    'news': final_state.get('news_report'),
+                    'fundamentals': final_state.get('fundamentals_report'),
+                },
+                "debates": {
+                    'investment': final_state.get('investment_debate_state'),
+                    'risk': final_state.get('risk_debate_state'),
+                }
+            }
+
             if context_extra:
                 decision['rationale'] = f"{context_extra}\n{decision.get('rationale', '')}"
-                
+            
+            print(f"\n>>> [Agent] {symbol} 研判完成！生成决策: {decision.get('action')}")
             return decision
+
         except Exception as e:
+            # 尝试 2: 降级方案 - 如果多智能体撞了配额，直接进行单兵研判
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "insufficient_quota" in str(e).lower():
+                print(f"⚠️ 多智能体配额超限，正在启动单兵备用大脑 (Solo Agent)...")
+                return self.solo_fallback_analyze(symbol, context_extra)
+
             print(f"Agent 分析失败 {symbol}: {e}")
             return None
+
+    def solo_fallback_analyze(self, symbol, context):
+        """
+        单兵研判：只发一次请求，极大节省配额 (使用 DeepSeek + 中文输出)
+        """
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=settings.LLM_API_KEY,
+            base_url=settings.LLM_BASE_URL
+        )
+
+        prompt = f"""
+        你是一位资深的量化投资专家。请根据以下数据为股票 {symbol} 提供一份详尽的中文投研建议：
+        {context}
+        要求：
+        1. 给出明确的操作建议 (买入/持有/卖出)。
+        2. 详细阐述核心逻辑（涵盖基本面、技术面和风险点）。
+        3. 必须使用中文回答。
+        """
+        try:
+            resp = client.chat.completions.create(
+                model="deepseek-chat", 
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1
+            )
+            content = resp.choices[0].message.content
+            return {
+                "action": "买入" if "买入" in content or "BUY" in content.upper() else "持有",
+                "quantity": "N/A",
+                "rationale": content,
+                "debate_summary": "配额限制，已启动备用单兵大脑生成中文研判。"
+            }
+        except Exception as e:
+            print(f"备用大脑也哑火了: {e}")
+            return None
+
 
 agent_bridge = AgentBridge()

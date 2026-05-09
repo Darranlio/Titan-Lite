@@ -22,6 +22,13 @@ class DataProvider:
         :param symbol: 股票代码 (如 'AAPL', '0700.HK')
         """
         try:
+            # 自动处理未来日期
+            real_today = pd.Timestamp.now().strftime("%Y-%m-%d")
+            if end_date and end_date > real_today:
+                end_date = real_today
+            if start_date and start_date > real_today:
+                start_date = real_today
+
             # yfinance 获取数据
             ticker = yf.Ticker(symbol)
             df = ticker.history(start=start_date, end=end_date, interval=interval)
