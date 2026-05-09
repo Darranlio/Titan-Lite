@@ -22,7 +22,7 @@ services:
 
   # 服务B: 私有文档站 (Nginx 渲染静态文件)
   knowledge-base:
-    image: nginx:alpine
+    image: registry.cn-hangzhou.aliyuncs.com/google_containers/nginx-slim:0.8
     container_name: titan_wiki
     restart: always
     ports:
