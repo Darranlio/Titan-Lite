@@ -1,7 +1,8 @@
 __pycache__/
 node_modules/
 .htpasswd
-.env
+**/.env
+.env*
 app/data/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
