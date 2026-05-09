@@ -4,6 +4,10 @@ outline: deep
 title: Titan-Lite 项目主页
 ---
 
+<script setup>
+import ControlPanel from './ControlPanel.vue'
+</script>
+
 # ⚡ Titan-Lite 量化交易系统
 
 > 一个针对 **2C2G 低配云服务器** 优化的轻量级、容器化量化交易系统。

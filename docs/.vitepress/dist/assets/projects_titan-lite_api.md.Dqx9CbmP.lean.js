@@ -1,1 +1,0 @@
-import{_ as t,c as e,o as a}from"./chunks/framework.Cee10E_e.js";const l=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"projects/titan-lite/api.md","filePath":"projects/titan-lite/api.md"}'),r={name:"projects/titan-lite/api.md"};function i(o,s,c,n,p,_){return a(),e("div")}const m=t(r,[["render",i]]);export{l as __pageData,m as default};

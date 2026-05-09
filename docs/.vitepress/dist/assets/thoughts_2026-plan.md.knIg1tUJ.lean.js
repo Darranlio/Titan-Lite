@@ -1,1 +1,0 @@
-import{_ as t,c as e,o as a}from"./chunks/framework.Cee10E_e.js";const h=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"thoughts/2026-plan.md","filePath":"thoughts/2026-plan.md"}'),o={name:"thoughts/2026-plan.md"};function n(s,r,c,p,_,l){return a(),e("div")}const i=t(o,[["render",n]]);export{h as __pageData,i as default};
