@@ -36,66 +36,75 @@
 
 ---
 
-## 3. 系统总体架构 (System Architecture)
+## 3. 系统总体架构 (System Architecture V2.1)
 
-系统采用 **微服务架构 (Microservices)**，主要由**量化计算核心 (Quant Core)** 和 **知识库 (Knowledge Base)** 两大容器组成。
+系统已升级为**机构级多源验证架构**。
 
 ```mermaid
 graph TD
-    %% 外部节点定义
-    External_Data(("AkShare API"))
-    External_LLM(("DeepSeek API"))
-    User_WeCom(("企业微信"))
-    User_Browser(("浏览器"))
-
-    %% 主云端容器
-    subgraph Cloud ["阿里云 ECS (2C 2G)"]
-        
-        %% 量化容器
-        subgraph QuantContainer ["Container: Titan-Quant"]
-            Scheduler["APScheduler 调度器"]
-            DataAdaptor["数据适配层"]
-            Strategy["策略引擎"]
-            Math["数学模型库"]
-            AI["AI 舆情分析"]
-            Painter["绘图引擎"]
-            Push["企业微信推送"]
-        end
-
-        %% Wiki容器
-        subgraph WikiContainer ["Container: Nginx"]
-            StaticFiles["VitePress 静态资源"]
-        end
-        
-        %% Swap 节点
-        Swap[("虚拟内存 Swap")]
+    %% 外部数据源
+    subgraph Data_Sources ["🌐 全球数据源"]
+        FMP[("FMP API<br/>深度财报/估值")]
+        Finnhub[("Finnhub API<br/>机构新闻/内幕")]
+        YF[("yfinance<br/>实时价格/K线")]
     end
 
-    %% --- 连线逻辑放最后，防止解析错误 ---
-    
-    %% 外部交互
-    External_Data --> DataAdaptor
-    External_LLM --> AI
-    Push --> User_WeCom
-    StaticFiles --> User_Browser
+    %% AI 大脑
+    subgraph AI_Core ["🧠 Gemini 多智能体大脑"]
+        FactChecker["事实核查专家<br/>(Fact-Checker)"]
+        Analyst["投研分析师<br/>(Analysts)"]
+        Debater["多空辩论组<br/>(Bull vs Bear)"]
+        PM["投资经理<br/>(Portfolio Manager)"]
+    end
 
-    %% 内部逻辑
-    Swap -.-> Scheduler
-    Scheduler --> Strategy
-    Strategy --> DataAdaptor
-    Strategy --> Math
-    Strategy --> AI
-    Strategy --> Painter
-    Painter --> Push
+    %% 核心控制中枢
+    subgraph Quant_Engine ["⚙️ Titan-Quant V2.1"]
+        Screener["价值筛选器<br/>(Valuation Screener)"]
+        VerifyEngine["鉴伪引擎<br/>(Verification Engine)"]
+        Backtester["回测模块<br/>(Backtester)"]
+        Reporter["研报生成器<br/>(Markdown Generator)"]
+    end
+
+    %% 交互层
+    subgraph UI_Layer ["🖥️ 用户交互层"]
+        WebUI["VitePress Dashboard<br/>(控制面板)"]
+        WeCom["企业微信<br/>(实时推送)"]
+    end
+
+    %% 逻辑流向
+    FMP --> Screener
+    Finnhub --> VerifyEngine
+    YF --> VerifyEngine
+    YF --> Backtester
+
+    Screener --> FactChecker
+    VerifyEngine --> FactChecker
+    FactChecker --> Analyst
+    Analyst --> Debater
+    Debater --> PM
+
+    PM --> Reporter
+    Reporter --> WebUI
+    PM --> WeCom
+    WebUI -- "手动触发" --> Screener
 ```
 
-## 4. 核心模块详细设计 (Implementation Details)
+---
 
-### 4.1 数据适配层 (Data Provider)
-针对开源数据接口不稳定的特性，设计了高健壮性的适配器。
+## 4. 核心功能特性
 
-* **重试机制**: 使用 `tenacity` 库实现指数退避重试 (Exponential Backoff)，防止因网络抖动导致任务失败。
-* **接口隔离**: 将 `AkShare` 的调用封装在 `DataProvider` 类中，业务逻辑不直接依赖第三方库，便于未来更换数据源。
+### 4.1 机构级价值漏斗
+不同于传统的形态选股，Titan-Lite 关注**估值偏离度**。
+1. **获取 FMP 共识目标价**：提取华尔街顶级投行的平均预期。
+2. **计算 Upside**：筛选出上涨空间 > 10% 的标的。
+3. **基本面审计**：自动检查 PE/ROE 等核心指标。
+
+### 4.2 🛡️ 事实核查与鉴伪 (Verification)
+为了防止“小报割韭菜”，系统引入了三重鉴伪：
+* **AI 交叉审计**：比对多源新闻，识别诱多话术。
+* **量价背离监控**：通过 OBV 指标监测是否属于“缩量诱多”。
+* **内幕交易对冲**：若利好发布时高管在抛售，系统将强制下调真实性评分。
+
 
 ### 4.2 数学模型层 (Math Engine)
 采用**动态对冲比率**计算模型，而非传统的静态回归。

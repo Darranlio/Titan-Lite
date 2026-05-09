@@ -11,6 +11,7 @@ from valuation_screener import valuation_screener
 from agent_bridge import agent_bridge
 from verification_engine import verification_engine
 from finnhub_provider import finnhub_provider
+from fmp_provider import fmp_provider
 
 class TitanStrategyV2:
     def __init__(self):
@@ -119,5 +120,52 @@ date: {datetime.now().strftime('%Y-%m-%d')}
 """
         self.bot.send_markdown(msg, mode="private")
 
+    def analyze_single_ticker(self, symbol):
+        """
+        针对指定个股运行深度研判 (跳过初筛)
+        """
+        print(f">>> [V2.1 Single] 针对 {symbol} 启动专项研判...")
+        
+        # 1. 获取基础数据
+        try:
+            current_price = data_provider.get_history_price(symbol).iloc[-1]
+            estimates = fmp_provider.get_analyst_estimates(symbol)
+            metrics = fmp_provider.get_key_metrics(symbol)
+            
+            item = {
+                'symbol': symbol,
+                'current_price': round(current_price, 2),
+                'target_price': round(estimates.get('estimatedPriceAvg', current_price * 1.1), 2),
+                'upside': (estimates.get('estimatedPriceAvg', current_price * 1.1) - current_price) / current_price,
+                'pe': metrics.get('peRatioTTM', 0),
+                'roe': metrics.get('roeTTM', 0)
+            }
+        except Exception as e:
+            print(f"获取 {symbol} 基础数据失败: {e}")
+            return False
+
+        # 2. 鉴伪与研判 (复用流程)
+        news = finnhub_provider.get_company_news(symbol)
+        fact_check, fact_score = verification_engine.verify_news(symbol, news)
+        divergence_msg = verification_engine.check_divergence(symbol)
+        insider_msg = verification_engine.get_insider_signal(symbol)
+        
+        v_context = f"\n[事实核查报告]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价表现: {divergence_msg}\n- 高管行为: {insider_msg}\n"
+        
+        decision = agent_bridge.analyze_ticker(symbol, context_extra=v_context)
+        
+        if decision:
+            self.save_to_web(symbol, item, decision, {
+                'fact_check': fact_check,
+                'fact_score': fact_score,
+                'divergence': divergence_msg,
+                'insider': insider_msg
+            })
+            return True
+        return False
+
 def run_job():
     TitanStrategyV2().execute()
+
+def run_single(symbol):
+    return TitanStrategyV2().analyze_single_ticker(symbol)

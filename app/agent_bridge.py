@@ -21,8 +21,8 @@ class AgentBridge:
         
         # 如果是 Google，指定模型名称
         if settings.LLM_PROVIDER == "google":
-            self.config["deep_think_llm"] = "gemini-2.0-flash-exp"
-            self.config["quick_think_llm"] = "gemini-2.0-flash-exp"
+            self.config["deep_think_llm"] = "gemini-2.0-flash"
+            self.config["quick_think_llm"] = "gemini-2.0-flash"
         
         self.config["checkpoint_enabled"] = False 
         self.config["max_debate_rounds"] = 1 # 针对 2G 内存和速度优化，设为 1 轮

@@ -93,7 +93,8 @@ export default withMermaid(defineConfig({
         {
           text: 'Titan-Lite 量化系统',
           items: [
-            { text: '项目简介', link: '/projects/titan-lite/index.md' }, // 对应 index.md
+            { text: '项目简介', link: '/projects/titan-lite/index.md' },
+            { text: '🚀 快速上手 (必读)', link: '/projects/titan-lite/usage_guide.md' },
             { text: '系统架构设计', link: '/projects/titan-lite/design_doc.md' },
             { text: '核心策略算法', link: '/projects/titan-lite/strategy.md' },
             { text: '研报库 (NEW)', link: '/projects/titan-lite/reports/' },
