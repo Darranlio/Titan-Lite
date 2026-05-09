@@ -47,6 +47,7 @@ const runSingleAnalysis = async () => {
 }
 </script>
 
+<template>
 <div class="dashboard-container">
   <div class="card batch-card">
     <div class="icon">🌍</div>
@@ -71,6 +72,7 @@ const runSingleAnalysis = async () => {
     <p v-if="singleStatus" class="status">{{ singleStatus }}</p>
   </div>
 </div>
+</template>
 
 <style scoped>
 .dashboard-container {
