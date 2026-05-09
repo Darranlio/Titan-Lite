@@ -1,9 +1,8 @@
 services:
   # 服务A: 量化核心
   quant-core:
-    build: 
-      context: ./app
-      dockerfile: Dockerfile
+    build: ./app
+    image: titan-v2-local:latest
     container_name: titan_core
     restart: always
     env_file:
@@ -18,15 +17,16 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 1.5G # 调高一点，Agent 需要更多内存
+          memory: 1.5G
 
-  # 服务B: 私有文档站 (改用 Python 镜像内置服务，防止拉取 Nginx 失败)
+  # 服务B: 私有文档站 (共享同一个构建好的镜像)
   knowledge-base:
-    image: titan-lite-quant-core # 复用刚才构建好的 Python 镜像
+    build: ./app
+    image: titan-v2-local:latest
     container_name: titan_wiki
     restart: always
     ports:
       - "8080:80"
     volumes:
-      - ./docs/.vitepress/dist:/usr/share/nginx/html # 这里的路径可以保持挂载
+      - ./docs/.vitepress/dist:/usr/share/nginx/html
     command: python3 -m http.server 80 --directory /usr/share/nginx/html
