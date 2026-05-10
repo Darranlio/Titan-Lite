@@ -144,5 +144,21 @@ class DataProvider:
             }
         except: return {}
 
+    @staticmethod
+    def get_exchange_rates():
+        """获取实时汇率 (USDHKD, USDCNY)"""
+        rates = {"USD": 1.0, "HKD": 7.8, "CNY": 7.2} # 默认值
+        try:
+            # 抓取雅虎财经汇率
+            pairs = ["USDHKD=X", "USDCNY=X"]
+            for pair in pairs:
+                ticker = yf.Ticker(pair)
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    currency = pair[3:6]
+                    rates[currency] = hist['Close'].iloc[-1]
+            return rates
+        except: return rates
+
 # 导出单例
 data_provider = DataProvider()
