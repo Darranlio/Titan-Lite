@@ -4,10 +4,11 @@ import mathjax3 from 'markdown-it-mathjax3'
 
 export default withMermaid(defineConfig({
   base: '/Titan-Lite/',
+  ignoreDeadLinks: true,
 // === 1. 强制深色模式 ===
   appearance: 'dark',
-  title: "可塑性记忆-Max",
-  description: "Projects, Notes & Thoughts",
+  title: "Digital Asset Lab",
+  description: "Advanced Quant & AI Trading Solutions",
 
   // 开启数学公式支持
   markdown: {
@@ -54,67 +55,43 @@ export default withMermaid(defineConfig({
 
   themeConfig: {
     // === 1. 顶部导航栏 (NavBar) ===
-    // 按照你的要求：首页 | 项目 | 笔记 | 随想录
     nav: [
-      { text: '首页', link: '/' },
-      
-      // [项目]：设计为下拉菜单，方便快速切换不同项目
-      { 
-        text: '项目', 
-        items: [
-          { 
-            text: '当前进行中', 
-            items: [
-              { text: '📊 Titan-Lite 量化系统', link: '/projects/titan-lite/' }
-            ]
-          },
-          { 
-            text: '归档 / 其他', 
-            items: [
-              { text: '🏗️ 待启动项目...', link: '/projects/future-project/' }
-            ]
-          }
-        ]
-      },
-
-      // [笔记]：直接链接到笔记主页，或者也可以做成下拉
-      { text: '笔记', link: '/notes/python/tricks' },
-      
-      // [随想录]
-      { text: '随想录', link: '/thoughts/2024-plan' }
+      { text: '实验室中心', link: '/' },
+      { text: '我的基金', link: '/projects/titan-lite/portfolio' },
+      { text: '研报档案', link: '/projects/titan-lite/reports/index' },
+      { text: '技术手册', link: '/projects/titan-lite/design/design_doc' },
+      { text: '学习笔记', link: '/notes/python/tricks' }
     ],
 
     // === 2. 侧边栏 (Sidebar) ===
-    // 核心逻辑：根据当前路径，显示对应的侧边栏
     sidebar: {
-      // -----------------------------------------
-      // A. 当用户在 Titan-Lite 项目文档里时
-      // -----------------------------------------
-      '/projects/titan-lite/': [
+      '/': [
         {
-          text: '📊 Titan-Lite 总览',
+          text: '📊 实验室控制台',
           items: [
-            { text: '控制面板 (主页)', link: '/projects/titan-lite/index' },
+            { text: '控制中心 (首页)', link: '/' },
+            { text: '🏦 我的基金中心', link: '/projects/titan-lite/portfolio' },
           ]
         },
         {
-          text: '📂 个股档案馆',
+          text: '📂 数字化档案馆',
           collapsed: false,
           items: [
-            { text: '研报索引目录', link: '/projects/titan-lite/reports/index' },
+            { text: '全市场研报索引', link: '/projects/titan-lite/reports/index' },
+            { text: '🌏 宏观全景展望', link: '/projects/titan-lite/reports/market_overview' },
           ]
         },
         {
-          text: '🏗️ 核心设计文档',
+          text: '🏗️ 核心技术文档',
           collapsed: false,
           items: [
-            { text: '系统架构设计', link: '/projects/titan-lite/design/design_doc' },
-            { text: '核心策略逻辑', link: '/projects/titan-lite/design/strategy' },
+            { text: '系统原理与哲学', link: '/projects/titan-lite/design/architecture_theory' },
+            { text: '施工细节与UI规范', link: '/projects/titan-lite/design/ui_logic_spec' },
             { text: 'API 接口手册', link: '/projects/titan-lite/design/api' },
           ]
         },
         {
-          text: '🚀 运维与使用',
+          text: '🚀 部署与使用',
           collapsed: true,
           items: [
             { text: '使用手册', link: '/projects/titan-lite/design/usage_guide' },

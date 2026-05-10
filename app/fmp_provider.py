@@ -20,8 +20,12 @@ class FMPProvider:
         try:
             resp = requests.get(url, params=params, timeout=10)
             data = resp.json()
+            if isinstance(data, dict) and "Error Message" in data:
+                print(f"FMP API 错误: {data['Error Message']}")
+                return {}
             return data[0] if data else {}
-        except:
+        except Exception as e:
+            print(f"FMP 请求异常: {e}")
             return {}
 
     def get_key_metrics(self, symbol):
@@ -31,6 +35,9 @@ class FMPProvider:
         try:
             resp = requests.get(url, params=params, timeout=10)
             data = resp.json()
+            if isinstance(data, dict) and "Error Message" in data:
+                print(f"FMP API 错误 (Metrics): {data['Error Message']}")
+                return {}
             return data[0] if data else {}
         except:
             return {}
