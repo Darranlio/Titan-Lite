@@ -21,21 +21,41 @@ class ValuationScreenerV2_1:
         
         qualified = []
         
-        # 2. 逐一审计估值 (切换至 FMP)
+        # 2. 逐一审计估值
         for symbol in candidates:
             try:
-                # 获取 FMP 专家预测
+                # 尝试获取 FMP 专家预测
                 estimates = fmp_provider.get_analyst_estimates(symbol)
                 metrics = fmp_provider.get_key_metrics(symbol)
                 
                 # 获取当前价格 (yfinance 依然最快)
-                current_price = data_provider.get_history_price(symbol).iloc[-1]
+                price_series = data_provider.get_history_price(symbol)
+                if price_series.empty:
+                    print(f"  [Screener] 跳过 {symbol}: 无法获取价格数据")
+                    continue
+                current_price = price_series.iloc[-1]
                 
-                # FMP 提供的平均目标价
+                # 数据源融合：FMP 优先，yfinance 兜底
                 target_price = estimates.get('estimatedPriceAvg', 0)
-                
+                pe = metrics.get('peRatioTTM', 0)
+                roe = metrics.get('roeTTM', 0)
+                sector = "Unknown"
+                industry = "Unknown"
+                source = "FMP Institutional"
+
+                # 兜底逻辑：如果 FMP 数据为空，切换到 yfinance
+                if target_price <= 0:
+                    y_info = data_provider.get_analyst_info(symbol)
+                    target_price = y_info.get('targetMeanPrice', 0)
+                    pe = y_info.get('peRatioTTM', 0)
+                    roe = y_info.get('roeTTM', 0)
+                    sector = y_info.get('sector', 'Unknown')
+                    industry = y_info.get('industry', 'Unknown')
+                    source = "yfinance Analytics"
+
                 if target_price > 0:
                     upside = (target_price - current_price) / current_price
+                    print(f"  [Screener] {symbol}: {sector} | {industry} | 涨幅 {upside:.2%}")
                     
                     if upside >= self.min_upside:
                         qualified.append({
@@ -43,12 +63,14 @@ class ValuationScreenerV2_1:
                             'current_price': round(current_price, 2),
                             'target_price': round(target_price, 2),
                             'upside': upside,
-                            'pe': metrics.get('peRatioTTM', 0),
-                            'roe': metrics.get('roeTTM', 0),
-                            'rating': "FMP Institutional"
+                            'pe': pe or 0,
+                            'roe': roe or 0,
+                            'sector': sector,
+                            'industry': industry,
+                            'rating': source
                         })
                 
-                time.sleep(0.2)
+                time.sleep(0.1)
             except Exception as e:
                 print(f"审计 {symbol} 失败: {e}")
                 

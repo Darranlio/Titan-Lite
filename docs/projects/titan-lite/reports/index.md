@@ -1,10 +1,23 @@
-# 📑 历史投研报告库
+---
+title: 研报档案馆
+prev: { text: '我的基金中心', link: '/projects/titan-lite/portfolio' }
+next: { text: '宏观全景展望', link: './market_overview' }
+---
 
-这里存放由 Titan-Lite V3.0 系统自动生成的深度研报与个股档案馆。
+# 📑 研报历史库
+
+::: info 🌍 宏观视角
+- [**全市场宏观全景展望**](./market_overview.md)
+:::
 
 ---
 
 ## 📈 覆盖个股列表 (Symbol Coverage)
-
-> 🔄 **目前列表为空**。
-> 请点击“项目主页”的操作台，输入 `NVDA` 或 `EWY` 并运行“深度研判”来生成第一份真实报告。
+- [📊 **0700.HK** 总览看板](./0700.HK/index.md)
+- [📊 **CRM** 总览看板](./CRM/index.md)
+- [📊 **GRAB** 总览看板](./GRAB/index.md)
+- [📊 **INFQ** 总览看板](./INFQ/index.md)
+- [📊 **META** 总览看板](./META/index.md)
+- [📊 **NKE** 总览看板](./NKE/index.md)
+- [📊 **NOW** 总览看板](./NOW/index.md)
+- [📊 **ONDS** 总览看板](./ONDS/index.md)

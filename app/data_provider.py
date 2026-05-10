@@ -24,14 +24,18 @@ class DataProvider:
         try:
             # 自动处理未来日期
             real_today = pd.Timestamp.now().strftime("%Y-%m-%d")
-            if end_date and end_date > real_today:
+            if not end_date or end_date > real_today:
                 end_date = real_today
-            if start_date and start_date > real_today:
-                start_date = real_today
-
+            
             # yfinance 获取数据
             ticker = yf.Ticker(symbol)
+            # 增加对 period 的防御性处理
             df = ticker.history(start=start_date, end=end_date, interval=interval)
+            
+            # 如果依然拿不到，尝试拿最近 1 天
+            if df.empty:
+                df = ticker.history(period="1d")
+
             if df.empty: return pd.Series()
             
             # 标准化清洗
@@ -54,12 +58,16 @@ class DataProvider:
             
             # 提取关键估值字段
             result = {
-                'currentPrice': info.get('currentPrice'),
+                'currentPrice': info.get('currentPrice') or info.get('previousClose'),
                 'targetMeanPrice': info.get('targetMeanPrice'),
                 'targetLowPrice': info.get('targetLowPrice'),
                 'targetHighPrice': info.get('targetHighPrice'),
                 'recommendationKey': info.get('recommendationKey'), # e.g., 'buy', 'strong_buy'
-                'numberOfAnalystOpinions': info.get('numberOfAnalystOpinions')
+                'numberOfAnalystOpinions': info.get('numberOfAnalystOpinions'),
+                'peRatioTTM': info.get('trailingPE'),
+                'roeTTM': info.get('returnOnEquity'),
+                'sector': info.get('sector', 'Unknown'),
+                'industry': info.get('industry', 'Unknown')
             }
             
             # 计算潜在涨幅
@@ -86,15 +94,55 @@ class DataProvider:
             return []
 
     @staticmethod
-    def get_market_trending(market="US"):
-        """
-        获取市场热点标的 (初步通过 yfinance 模拟，后期可接入新闻爬虫)
-        """
-        # 这里先占位，后续 Phase 2 会开发专门的 news_spider
-        if market == "US":
-            return ["AAPL", "NVDA", "TSLA", "MSFT", "GOOGL", "AMZN", "META"]
-        else:
-            return ["0700.HK", "9988.HK", "3690.HK", "1810.HK", "9888.HK"]
+    def get_market_benchmarks():
+        """获取全球核心指数表现"""
+        indices = {
+            "S&P 500": "SPY",
+            "Nasdaq 100": "QQQ",
+            "Dow Jones": "DIA",
+            "Hang Seng": "^HSI"
+        }
+        results = {}
+        for name, symbol in indices.items():
+            try:
+                ticker = yf.Ticker(symbol)
+                # 获取过去 5 天数据看趋势
+                hist = ticker.history(period="5d")
+                if not hist.empty:
+                    change = (hist['Close'].iloc[-1] - hist['Close'].iloc[-2]) / hist['Close'].iloc[-2]
+                    results[name] = f"{change:.2%}"
+            except:
+                results[name] = "Data N/A"
+        return results
+
+    @staticmethod
+    def get_company_details(symbol):
+        """获取公司深度简介与业务背景"""
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            return {
+                "summary": info.get('longBusinessSummary', '暂无业务简介'),
+                "full_name": info.get('longName', symbol),
+                "website": info.get('website', '#'),
+                "employees": info.get('fullTimeEmployees', 'N/A')
+            }
+        except: return {"summary": "获取失败", "full_name": symbol}
+
+    @staticmethod
+    def get_financial_highlights(symbol):
+        """获取财务报表核心亮点 (成长性与盈利能力)"""
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            return {
+                "rev_growth": info.get('revenueGrowth'), # 营收增长
+                "net_margin": info.get('profitMargins'),  # 利润率
+                "fcf": info.get('freeCashflow'),         # 自由现金流
+                "ebitda_margin": info.get('ebitdaMargins'),
+                "debt_to_equity": info.get('debtToEquity')
+            }
+        except: return {}
 
 # 导出单例
 data_provider = DataProvider()
