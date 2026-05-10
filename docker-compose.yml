@@ -1,8 +1,10 @@
 services:
-  # 服务A: 量化核心
+  # 服务A: 量化核心 (FastAPI 后端)
   quant-core:
-    build: ./app
-    image: titan-v2-local:latest
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
+    image: titan-v2-backend:latest
     container_name: titan_core
     restart: always
     env_file:
@@ -10,7 +12,8 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - ./app/data:/app/data
+      - ./app/data:/app/app/data  # 持久化数据库
+      - ./docs/projects/titan-lite/reports:/app/docs/projects/titan-lite/reports # 同步生成的研报
     ports:
       - "8000:8000"
     deploy:
@@ -19,14 +22,15 @@ services:
           cpus: '1.0'
           memory: 1.5G
 
-  # 服务B: 私有文档站 (共享同一个构建好的镜像)
-  knowledge-base:
-    build: ./app
-    image: titan-v2-local:latest
-    container_name: titan_wiki
+  # 服务B: 前端展示 (VitePress + Nginx)
+  frontend:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    image: titan-v2-frontend:latest
+    container_name: titan_web
     restart: always
     ports:
       - "8080:80"
     volumes:
-      - ./docs/.vitepress/dist:/usr/share/nginx/html
-    command: python3 -m http.server 80 --directory /usr/share/nginx/html
+      - ./docs/projects/titan-lite/reports:/usr/share/nginx/html/projects/titan-lite/reports:ro # 实时查看后端生成的研报

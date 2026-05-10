@@ -230,7 +230,11 @@ const loading = ref(false)
 const diagLoading = ref(false)
 
 const tradeForm = ref({ symbol: '', side: 'INITIAL', quantity: 0, price: 1, date: new Date().toISOString().split('T')[0] })
-const API_BASE = 'http://localhost:8000'
+
+// 动态检测 API 地址，支持服务器公网部署
+const API_BASE = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.hostname}:8000` 
+  : 'http://localhost:8000'
 
 const fetchAll = async () => {
   try {
