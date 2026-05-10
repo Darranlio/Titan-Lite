@@ -1,12 +1,12 @@
 import os
 import sqlite3
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from data_provider import data_provider
 
 class PortfolioManager:
     """
-    Titan-PM V2: 基于 SQLite 的工业级基金管理系统
+    Titan-PM V8.9: 工业级多币种核算引擎 (含完整状态回滚)
     """
     def __init__(self):
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -21,185 +21,184 @@ class PortfolioManager:
     def _init_db(self):
         with self._get_conn() as conn:
             cursor = conn.cursor()
-            # 1. 交易流水表
             cursor.execute('''CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                symbol TEXT,
-                side TEXT,
-                quantity INTEGER,
-                price REAL,
-                total REAL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                symbol TEXT, side TEXT, quantity INTEGER, price REAL, total REAL, units_issued REAL, timestamp DATETIME
             )''')
-            # 2. 持仓表
-            cursor.execute('''CREATE TABLE IF NOT EXISTS positions (
-                symbol TEXT PRIMARY KEY,
-                quantity INTEGER,
-                average_cost REAL
-            )''')
-            # 3. 基金元数据 (现金、份额)
-            cursor.execute('''CREATE TABLE IF NOT EXISTS fund_meta (
-                key TEXT PRIMARY KEY,
-                value REAL
-            )''')
-            # 4. 净值历史
-            cursor.execute('''CREATE TABLE IF NOT EXISTS nav_history (
-                date TEXT PRIMARY KEY,
-                nav REAL,
-                total_value REAL
-            )''')
-            # 5. 结构化研报库
-            cursor.execute('''CREATE TABLE IF NOT EXISTS research_reports (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                symbol TEXT,
-                date TEXT,
-                rating TEXT,
-                price REAL,
-                upside REAL,
-                pe REAL,
-                fact_score REAL,
-                content_md TEXT,
-                raw_data_json TEXT,
-                UNIQUE(symbol, date)
-            )''')
-            
-            # 初始化本金 (100万)
-            cursor.execute("INSERT OR IGNORE INTO fund_meta VALUES ('cash', 1000000.0)")
-            cursor.execute("INSERT OR IGNORE INTO fund_meta VALUES ('total_units', 1000000.0)")
+            cursor.execute('''CREATE TABLE IF NOT EXISTS fund_meta (key TEXT PRIMARY KEY, value REAL)''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS nav_history (date TEXT PRIMARY KEY, nav REAL, total_value_usd REAL)''')
             conn.commit()
 
-    def record_transaction(self, symbol, side, quantity, price):
+    def record_transaction(self, symbol, side, quantity, price, date=None):
         symbol = symbol.upper()
-        total_amount = quantity * price
-        
+        total = quantity * price
+        ts = date if date else datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
+            status = self.calculate_nav()
             with self._get_conn() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT value FROM fund_meta WHERE key='cash'")
-                current_cash = cursor.fetchone()[0]
+                cursor.execute("SELECT SUM(units_issued) FROM transactions")
+                total_units = cursor.fetchone()[0] or 0
 
-                if side == 'BUY':
-                    if current_cash < total_amount:
-                        return False, "现金不足"
-                    cursor.execute("UPDATE fund_meta SET value = value - ? WHERE key='cash'", (total_amount,))
-                    cursor.execute("SELECT quantity, average_cost FROM positions WHERE symbol=?", (symbol,))
-                    row = cursor.fetchone()
-                    if row:
-                        old_qty, old_cost = row
-                        new_qty = old_qty + quantity
-                        new_cost = (old_qty * old_cost + total_amount) / new_qty
-                        cursor.execute("UPDATE positions SET quantity=?, average_cost=? WHERE symbol=?", (new_qty, new_cost, symbol))
-                    else:
-                        cursor.execute("INSERT INTO positions VALUES (?, ?, ?)", (symbol, quantity, price))
-                elif side == 'SELL':
-                    cursor.execute("SELECT quantity FROM positions WHERE symbol=?", (symbol,))
-                    row = cursor.fetchone()
-                    if not row or row[0] < quantity:
-                        return False, "持仓不足"
-                    cursor.execute("UPDATE fund_meta SET value = value + ? WHERE key='cash'", (total_amount,))
-                    new_qty = row[0] - quantity
-                    if new_qty == 0:
-                        cursor.execute("DELETE FROM positions WHERE symbol=?", (symbol,))
-                    else:
-                        cursor.execute("UPDATE positions SET quantity=? WHERE symbol=?", (new_qty, symbol))
-                cursor.execute("INSERT INTO transactions (symbol, side, quantity, price, total) VALUES (?,?,?,?,?)", (symbol, side, quantity, price, total_amount))
+            if side == 'SELL':
+                all_stocks = status['us_equities'] + status['hk_equities']
+                current_qty = next((s['quantity'] for s in all_stocks if s['symbol'] == symbol), 0)
+                if current_qty < quantity: return False, f"持仓不足 (仅剩 {current_qty})"
+            if side == 'BUY':
+                currency = "HKD" if symbol.endswith(".HK") else "USD"
+                cash_map = {c['symbol']: c['quantity'] for c in status['cash_positions']}
+                if cash_map.get(currency, 0) < total: return False, f"{currency} 现金不足"
+
+            rates = data_provider.get_exchange_rates()
+            usd_equiv = total
+            if symbol == 'HKD': usd_equiv = total / rates['HKD']
+            elif symbol == 'CNY': usd_equiv = total / rates['CNY']
+            elif symbol.endswith('.HK'): usd_equiv = total / rates['HKD']
+
+            units_to_issue = 0
+            if side in ['DEPOSIT', 'INITIAL']:
+                units_to_issue = usd_equiv if total_units <= 0 else (usd_equiv / status['nav'])
+
+            with self._get_conn() as conn:
+                conn.execute("INSERT INTO transactions (symbol, side, quantity, price, total, units_issued, timestamp) VALUES (?,?,?,?,?,?,?)", 
+                             (symbol, side, quantity, price, total, units_to_issue, ts))
                 conn.commit()
-            return True, "交易记录已持久化至数据库"
-        except Exception as e: return False, f"数据库错误: {e}"
+            
+            if side == 'INITIAL' and symbol not in ['USD', 'HKD', 'CNY']:
+                self._backfill_nav(symbol, ts[:10], quantity, price)
+            return True, "✅ 记录成功"
+        except Exception as e: return False, str(e)
 
     def calculate_nav(self):
-        """计算最新净值"""
+        """核心聚合逻辑 (含彻底回滚策略)"""
         try:
             with self._get_conn() as conn:
+                df = pd.read_sql_query("SELECT * FROM transactions", conn)
                 cursor = conn.cursor()
-                cursor.execute("SELECT value FROM fund_meta WHERE key='cash'")
-                cash = cursor.fetchone()[0]
-                cursor.execute("SELECT value FROM fund_meta WHERE key='total_units'")
-                total_units = cursor.fetchone()[0]
-                cursor.execute("SELECT symbol, quantity, average_cost FROM positions")
-                positions = cursor.fetchall()
-            total_market_value = cash
-            pos_details = []
-            for symbol, qty, cost in positions:
-                price_series = data_provider.get_history_price(symbol)
-                current_price = price_series.iloc[-1] if not price_series.empty else cost
-                mkt_val = current_price * qty
-                total_market_value += mkt_val
-                pnl = (current_price - cost) / cost
-                pos_details.append({"symbol": symbol, "quantity": qty, "cost": round(cost, 2), "current_price": round(current_price, 2), "mkt_value": round(mkt_val, 2), "pnl": f"{pnl:.2%}"})
-            nav = total_market_value / total_units
-            date_str = datetime.now().strftime("%Y-%m-%d")
-            with self._get_conn() as conn:
-                conn.execute("INSERT OR REPLACE INTO nav_history VALUES (?, ?, ?)", (date_str, nav, total_market_value))
-            return {"nav": round(nav, 4), "total_value": round(total_market_value, 2), "cash": round(cash, 2), "positions": pos_details, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        except Exception as e: return None
+                cursor.execute("SELECT SUM(units_issued) FROM transactions")
+                total_units = cursor.fetchone()[0] or 0
+
+            # --- 彻底回滚：如果账本为空，清空历史数据，防止指标残留 ---
+            if df.empty:
+                with self._get_conn() as conn:
+                    conn.execute("DELETE FROM nav_history")
+                    conn.commit()
+                return {"nav": 1.0, "total_value_usd": 0, "cash_positions": [{"symbol":"USD","quantity":0,"mkt_value_usd":0}], "us_equities": [], "hk_equities": []}
+            
+            rates = data_provider.get_exchange_rates()
+            cash_ledger = {"USD": 0.0, "HKD": 0.0, "CNY": 0.0}
+            stocks = {}
+
+            for _, r in df.iterrows():
+                side, sym, total, qty = r['side'], r['symbol'], r['total'], r['quantity']
+                if sym in ['USD', 'HKD', 'CNY']:
+                    if side == 'DEPOSIT': cash_ledger[sym] += total
+                    elif side == 'WITHDRAW': cash_ledger[sym] -= total
+                else:
+                    if sym not in stocks: stocks[sym] = {"qty": 0, "total_cost": 0.0}
+                    currency = "HKD" if sym.endswith(".HK") else "USD"
+                    if side in ['BUY', 'INITIAL']:
+                        stocks[sym]['qty'] += qty
+                        stocks[sym]['total_cost'] += total
+                        if side == 'BUY': cash_ledger[currency] -= total
+                    elif side == 'SELL':
+                        if stocks[sym]['qty'] > 0:
+                            avg_cost = stocks[sym]['total_cost'] / stocks[sym]['qty']
+                            stocks[sym]['qty'] -= qty
+                            stocks[sym]['total_cost'] -= qty * avg_cost
+                        cash_ledger[currency] += total
+
+            cash_pos = [{"symbol": k, "quantity": round(v, 2), "mkt_value_usd": round(v/rates[k], 2)} for k, v in cash_ledger.items()]
+            total_cash_usd = sum(p['mkt_value_usd'] for p in cash_pos)
+
+            total_stock_usd = 0.0
+            us_equities, hk_equities = [], []
+            for s, d in stocks.items():
+                if d['qty'] <= 0: continue
+                try:
+                    hist = data_provider.get_history_price(s, start_date=(datetime.now()-timedelta(days=5)).strftime("%Y-%m-%d"))
+                    curr = hist.iloc[-1] if not hist.empty else (d['total_cost']/d['qty'])
+                except: curr = d['total_cost']/d['qty']
+                
+                mkt = curr * d['qty']
+                mkt_usd = mkt / (rates['HKD'] if s.endswith('.HK') else 1.0)
+                total_stock_usd += mkt_usd
+                avg_cost = d['total_cost'] / d['qty']
+                item = {"symbol": s, "quantity": d['qty'], "cost": round(avg_cost, 2), "current_price": round(curr, 2), "pnl": f"{(curr - avg_cost)/avg_cost:.2%}", "mkt_value": round(mkt, 2), "mkt_value_usd": round(mkt_usd, 2)}
+                if s.endswith('.HK'): hk_equities.append(item)
+                else: us_equities.append(item)
+
+            total_val_usd = max(0, total_cash_usd + total_stock_usd)
+            nav = total_val_usd / total_units if total_units > 0 else 1.0
+            
+            if total_units > 0:
+                with self._get_conn() as conn:
+                    conn.execute("INSERT OR REPLACE INTO nav_history VALUES (?, ?, ?)", (datetime.now().strftime("%Y-%m-%d"), nav, total_val_usd))
+
+            return {
+                "nav": round(nav, 4), "total_value_usd": round(total_val_usd, 2),
+                "total_value_hkd": round(total_val_usd * rates['HKD'], 2),
+                "total_value_cny": round(total_val_usd * rates['CNY'], 2),
+                "cash_positions": [c for c in cash_pos if c['quantity'] != 0 or c['symbol'] == 'USD'],
+                "us_equities": us_equities, "hk_equities": hk_equities
+            }
+        except Exception as e:
+            return {"nav": 1.0, "total_value_usd": 0, "cash_positions": [{"symbol":"USD","quantity":0,"mkt_value_usd":0}], "us_equities": [], "hk_equities": []}
+
+    def delete_transaction(self, tx_id):
+        try:
+            with self._get_conn() as conn: conn.execute("DELETE FROM transactions WHERE id=?", (tx_id,)); conn.commit()
+            return True, "记录已撤销"
+        except Exception as e: return False, str(e)
+
+    def get_transaction_history(self):
+        try:
+            with self._get_conn() as conn: return pd.read_sql_query("SELECT * FROM transactions ORDER BY timestamp DESC", conn).to_dict('records')
+        except: return []
 
     def get_nav_history(self):
-        """获取净值历史数据用于画图"""
         try:
             with self._get_conn() as conn:
                 df = pd.read_sql_query("SELECT date, nav FROM nav_history ORDER BY date ASC", conn)
-                return df.to_dict('records')
-        except: return []
+                if df.empty: return {"user": [], "benchmark": []}
+                spy = data_provider.get_history_price("SPY", start_date=df['date'].iloc[0])
+                spy_nav = (spy / spy.iloc[0]).tolist() if not spy.empty else [1.0]*len(df)
+                return {"user": df.to_dict('records'), "benchmark": spy_nav}
+        except: return {"user": [], "benchmark": []}
 
     def calculate_risk_metrics(self):
-        """
-        计算专业风险指标：夏普比率、最大回撤
-        """
+        status = self.calculate_nav()
+        t_ret = f"{(status['nav'] - 1):.2%}" if status['nav'] > 0 else "0.00%"
         try:
             with self._get_conn() as conn:
                 df = pd.read_sql_query("SELECT nav FROM nav_history ORDER BY date ASC", conn)
-            
-            if len(df) < 2: return {"sharpe": 0, "max_drawdown": "0.00%", "volatility": "0.00%"}
-            
-            # 计算日收益率
+            if len(df) < 2: return {"sharpe": "-", "max_drawdown": "-", "volatility": "-", "total_return": t_ret}
             df['returns'] = df['nav'].pct_change().fillna(0)
-            
-            # 1. 最大回撤
-            rolling_max = df['nav'].cummax()
-            drawdown = (df['nav'] - rolling_max) / rolling_max
-            max_drawdown = drawdown.min()
-            
-            # 2. 年化波动率 (假设 252 交易日)
-            vol = df['returns'].std() * (252 ** 0.5)
-            
-            # 3. 夏普比率 (假设无风险利率 2%)
+            mdd = ((df['nav'] - df['nav'].cummax()) / df['nav'].cummax()).min()
+            vol = df['returns'].std() * (252 ** 0.5) if len(df) > 2 else 0
             sharpe = (df['returns'].mean() * 252 - 0.02) / vol if vol > 0 else 0
-            
-            return {
-                "sharpe": round(sharpe, 2),
-                "max_drawdown": f"{max_drawdown:.2%}",
-                "volatility": f"{vol:.2%}",
-                "total_return": f"{(df['nav'].iloc[-1] - 1):.2%}"
-            }
-        except:
-            return {"sharpe": "-", "max_drawdown": "-", "volatility": "-"}
+            return {"sharpe": round(sharpe, 2) if vol > 0 else "-", "max_drawdown": f"{mdd:.2%}", "volatility": f"{vol:.2%}", "total_return": t_ret}
+        except: return {"sharpe": "-", "max_drawdown": "-", "volatility": "-", "total_return": t_ret}
 
-    def save_report_to_db(self, symbol, date, item, decision, verify_data, content_md):
-        """将研报数据结构化持久化"""
-        import json
+    def _backfill_nav(self, symbol, start_date, quantity, cost):
         try:
+            history = data_provider.get_history_price(symbol, start_date=start_date)
+            if history.empty: return
             with self._get_conn() as conn:
-                conn.execute('''
-                    INSERT OR REPLACE INTO research_reports 
-                    (symbol, date, rating, price, upside, pe, fact_score, content_md, raw_data_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (symbol, date, decision.get('action'), item['current_price'], item['upside'], item.get('pe', 0), 0.5, content_md, json.dumps(decision)))
-            return True
-        except Exception as e:
-            print(f"研报存数据库失败: {e}")
-            return False
+                for date, price in history.items():
+                    conn.execute("INSERT OR IGNORE INTO nav_history VALUES (?, ?, ?)", (date.strftime("%Y-%m-%d"), 1.0 * (price / history.iloc[0]), price * quantity))
+                conn.commit()
+        except: pass
 
     def get_portfolio_diagnosis(self, macro_context):
         status = self.calculate_nav()
-        if not status: return "数据核算异常"
         from openai import OpenAI
         from config import settings
-        prompt = f"你是一位顶级基金评级专家。请对以下个人基金组合进行【资产配置诊断】。\n[持仓快照]{status}\n[市场背景]{macro_context}"
+        prompt = f"分析组合资产现状：{status}。宏观：{macro_context}。给出调仓建议。"
         try:
             client = OpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
             resp = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "user", "content": prompt}])
             return resp.choices[0].message.content
-        except: return "诊断生成失败。"
+        except: return "诊断暂不可用。"
 
 portfolio_manager = PortfolioManager()

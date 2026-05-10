@@ -33,7 +33,7 @@ import ControlPanel from './projects/titan-lite/ControlPanel.vue'
     </div>
   </div>
   <div class="author-contact-actions">
-    <a href="mailto:1059390428@qq.com" class="contact-action-link">📧 Email</a>
+    <a href="javascript:void(0)" @click="window.alert('Email: sakuraperception@gmail.com')" class="contact-action-link">📧 Email</a>
     <a href="https://github.com/Darranlio" target="_blank" class="contact-action-link">🐙 GitHub</a>
   </div>
 </div>

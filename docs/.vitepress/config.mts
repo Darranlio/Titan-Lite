@@ -85,6 +85,7 @@ export default withMermaid(defineConfig({
           text: '🏗️ 核心技术文档',
           collapsed: false,
           items: [
+            { text: '技术手册总览', link: '/projects/titan-lite/design/design_doc' },
             { text: '系统原理与哲学', link: '/projects/titan-lite/design/architecture_theory' },
             { text: '施工细节与UI规范', link: '/projects/titan-lite/design/ui_logic_spec' },
             { text: 'API 接口手册', link: '/projects/titan-lite/design/api' },
