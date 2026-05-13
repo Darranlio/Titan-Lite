@@ -197,10 +197,12 @@ class TitanStrategyV2:
 
     def _update_symbol_dashboard(self, symbol, symbol_dir, history, item, decision, profile=None):
         latest = history[0]; first = history[-1]
-        change = (latest['price'] - first['price']) / first['price']
+        change = (latest['price'] - first['price']) / first['price'] if first['price'] != 0 else 0
         if not profile: profile = data_provider.get_company_details(symbol)
         financials = data_provider.get_financial_highlights(symbol)
         bt = backtester.run_simple_backtest(symbol)
+        bt_summary = bt.get('summary', '暂无回测数据') if bt else '暂无回测数据'
+        
         table = "| 日期 | 价格 | 评级 | PE | 预期涨幅 |\n| :--- | :--- | :--- | :--- | :--- |\n"
         for h in history[:5]: table += f"| {h['date']} | ${h['price']} | {h['rating']} | {h['pe']:.1f} | {h['upside']:.2%} |\n"
         summary = self._get_ai_summary(symbol, decision)
@@ -218,20 +220,32 @@ next: false
 ::: info {profile.get('full_name')}
 {profile.get('summary')}
 :::
-## 2. 📌 实时状态
-- 当前建议: `{latest['rating']}`
-- 现价: `${latest['price']}`
-- 涨跌: {change:.2%}
+
+## 2. 📌 实时状态卡片
+::: tip 核心指标
+- **当前建议**: `{latest['rating']}`
+- **实时价格**: `${latest['price']}`
+- **历史涨跌**: {change:.2%}
+- **预期空间**: {latest.get('upside', 0):.2%}
+:::
+
 ## 3. 📊 财务核心
-- 营收增长: {self._fmt_pct(financials.get('rev_growth'))}\n- 净利润率: {self._fmt_pct(financials.get('net_margin'))}\n- FCF: ${self._fmt_large(financials.get('fcf'))}
-## 4. 📈 历史回测
-{bt.get('summary', '生成中')}
-## 5. 📑 指标演变
+- 营收增长: {self._fmt_pct(financials.get('rev_growth'))}
+- 净利润率: {self._fmt_pct(financials.get('net_margin'))}
+- 自由现金流: ${self._fmt_large(financials.get('fcf'))}
+
+## 4. 📈 历史回测性能
+{bt_summary}
+
+## 5. 📑 指标演变追踪
 {table}
-## 6. 🧠 研判三段论
+
+## 6. 🧠 投研三段论
 {summary}
+
 ## 7. 📂 历史深度研报
 """
+
         for h in history: md += f"- [{h['date']} 深度研判报告](./{h['date']}.md)\n"
         with open(os.path.join(symbol_dir, "index.md"), "w") as f: f.write(md)
 
@@ -304,4 +318,4 @@ next: {{ text: '宏观全景展望', link: './market_overview' }}
         except: return False
 
 def run_job(): TitanStrategyV2().execute()
-def run_single(symbol): TitanStrategyV2().analyze_single_ticker(symbol)
+def run_single(symbol): return TitanStrategyV2().analyze_single_ticker(symbol)
