@@ -117,12 +117,26 @@ class DataProvider:
 
     @staticmethod
     def get_company_details(symbol):
-        """获取公司深度简介与业务背景"""
+        """获取公司深度简介与业务背景 (自动翻译为中文)"""
         try:
             ticker = yf.Ticker(symbol)
             info = ticker.info
+            summary_en = info.get('longBusinessSummary', 'No summary available.')
+            
+            # 使用 LLM 进行专业翻译
+            summary_cn = summary_en
+            if summary_en and summary_en != 'No summary available.':
+                try:
+                    from openai import OpenAI
+                    client = OpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
+                    prompt = f"请将以下这段股票业务简介翻译为专业的金融中文。要求：准确、精炼、符合中文表达习惯，不需要多余的解释。\n\n原文：\n{summary_en}"
+                    resp = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "user", "content": prompt}], temperature=0.1)
+                    summary_cn = resp.choices[0].message.content.strip()
+                except Exception as e:
+                    print(f"翻译简介失败: {e}")
+            
             return {
-                "summary": info.get('longBusinessSummary', '暂无业务简介'),
+                "summary": summary_cn,
                 "full_name": info.get('longName', symbol),
                 "website": info.get('website', '#'),
                 "employees": info.get('fullTimeEmployees', 'N/A')
