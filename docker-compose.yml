@@ -34,3 +34,4 @@ services:
       - "8080:80"
     volumes:
       - ./docs/projects/titan-lite/reports:/usr/share/nginx/html/projects/titan-lite/reports:ro # 实时查看后端生成的研报
+      - ./docs/.htpasswd:/etc/nginx/.htpasswd:ro # 挂载密码文件
