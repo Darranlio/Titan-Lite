@@ -19,7 +19,15 @@ WECOM_CORP_ID=xxxx
 WECOM_CORP_SECRET=xxxx
 ```
 
-### 2.2 启动服务
+### 2.2 安全配置 (可选)
+如果需要开启前端研报档案的访问密码（Basic Auth），请在项目根目录下生成密码文件：
+```bash
+# 生成密码文件 (用户名: admin, 密码: your_password)
+printf "admin:$(openssl passwd -1 your_password)\n" > docs/.htpasswd
+```
+注意：系统已在 `docker-compose.yml` 中配置了该文件的挂载。如果不生成此文件，前端可能会出现 403 错误。
+
+### 2.3 启动服务
 使用 Docker Compose 启动双容器架构（量化核心 + 知识库）：
 ```bash
 docker-compose up -d --build
