@@ -172,14 +172,13 @@ class TitanStrategyV2:
         history = [h for h in history if h['date'] != date_str]
         history.insert(0, current_meta)
         history = history[:10]
-        with open(metadata_path, "w") as f: json.dump(history, f, indent=4)
+        with open(meta_path, "w") as f: json.dump(history, f, indent=4)
         
         # 写入具体日度研报 (使用原生 Pager)
         refined = self._refine_report_with_ai(decision, symbol)
         full_md = f"---\ntitle: {symbol} 深度研报 ({date_str})\nprev: {{ text: '{symbol} 看板', link: './index' }}\nnext: false\n---\n\n# 📜 {symbol} 研报档案 - {date_str}\n\n{refined}"
         with open(os.path.join(symbol_dir, f"{date_str}.md"), "w") as f: f.write(full_md)
         
-        portfolio_manager.save_report_to_db(symbol, date_str, item, decision, verify_data, full_md)
         self._update_symbol_dashboard(symbol, symbol_dir, history, item, decision, profile)
         self.update_report_index(symbol, skip_build=skip_build)
 
