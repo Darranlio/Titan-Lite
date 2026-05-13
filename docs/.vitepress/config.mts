@@ -3,7 +3,7 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 import mathjax3 from 'markdown-it-mathjax3'
 
 export default withMermaid(defineConfig({
-  base: '/Titan-Lite/',
+  base: '/',
   ignoreDeadLinks: true,
 // === 1. 强制深色模式 ===
   appearance: 'dark',
