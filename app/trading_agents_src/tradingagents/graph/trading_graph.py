@@ -56,6 +56,7 @@ class TradingAgentsGraph:
         debug=False,
         config: Dict[str, Any] = None,
         callbacks: Optional[List] = None,
+        **kwargs,
     ):
         """Initialize the trading agents graph and components.
 
@@ -64,6 +65,7 @@ class TradingAgentsGraph:
             debug: Whether to run in debug mode
             config: Configuration dictionary. If None, uses default config
             callbacks: Optional list of callback handlers (e.g., for tracking LLM/tool stats)
+            **kwargs: Additional parameters passed to the LLM client (e.g., temperature)
         """
         self.debug = debug
         self.config = config or DEFAULT_CONFIG
@@ -78,6 +80,9 @@ class TradingAgentsGraph:
 
         # Initialize LLMs with provider-specific thinking configuration
         llm_kwargs = self._get_provider_kwargs()
+        
+        # Merge extra kwargs (like temperature)
+        llm_kwargs.update(kwargs)
 
         # Add callbacks to kwargs if provided (passed to LLM constructor)
         if self.callbacks:

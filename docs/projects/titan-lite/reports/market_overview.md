@@ -1,7 +1,7 @@
 ---
 title: 最新宏观展望
 prev: { text: '研报历史库', link: './index' }
-next: { text: '历史宏观档案', link: './macro/index' }
+next: false
 ---
 
 # 🌏 全市场宏观全景研判

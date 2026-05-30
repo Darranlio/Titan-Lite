@@ -75,6 +75,7 @@ class GraphSetup:
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
 
         # Create researcher and manager nodes
+        fact_aggregator_node = create_fact_aggregator(self.deep_thinking_llm)
         bull_researcher_node = create_bull_researcher(self.quick_thinking_llm)
         bear_researcher_node = create_bear_researcher(self.quick_thinking_llm)
         research_manager_node = create_research_manager(self.deep_thinking_llm)
@@ -98,6 +99,7 @@ class GraphSetup:
             workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
 
         # Add other nodes
+        workflow.add_node("Fact Aggregator", fact_aggregator_node)
         workflow.add_node("Bull Researcher", bull_researcher_node)
         workflow.add_node("Bear Researcher", bear_researcher_node)
         workflow.add_node("Research Manager", research_manager_node)
@@ -126,12 +128,14 @@ class GraphSetup:
             )
             workflow.add_edge(current_tools, current_analyst)
 
-            # Connect to next analyst or to Bull Researcher if this is the last analyst
+            # Connect to next analyst or to Fact Aggregator if this is the last analyst
             if i < len(selected_analysts) - 1:
                 next_analyst = f"{selected_analysts[i+1].capitalize()} Analyst"
                 workflow.add_edge(current_clear, next_analyst)
             else:
-                workflow.add_edge(current_clear, "Bull Researcher")
+                workflow.add_edge(current_clear, "Fact Aggregator")
+
+        workflow.add_edge("Fact Aggregator", "Bull Researcher")
 
         # Add remaining edges
         workflow.add_conditional_edges(

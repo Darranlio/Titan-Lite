@@ -39,29 +39,38 @@ def create_portfolio_manager(llm):
             else ""
         )
 
-        prompt = f"""As the Portfolio Manager, synthesize the risk analysts' debate and deliver the final trading decision.
+        prompt = f"""As the Lead Portfolio Manager, synthesize the research and deliver a DECISIVE and CONSISTENT trading decision.
 
 {instrument_context}
 
 ---
 
-**Rating Scale** (use exactly one):
-- **Buy**: Strong conviction to enter or add to position
-- **Overweight**: Favorable outlook, gradually increase exposure
-- **Hold**: Maintain current position, no action needed
-- **Underweight**: Reduce exposure, take partial profits
-- **Sell**: Exit position or avoid entry
+**Rating Scale** (strict adherence required):
+- **Strong Buy**: Exceptional conviction; CURRENT price is at or below ideal entry.
+- **Buy**: Solid conviction; favorable risk/reward at CURRENT price.
+- **Overweight**: Constructive long-term view; hold current position and add on minor dips.
+- **Hold**: Neutral view OR constructive view but **CURRENT price is too far above entry/support**.
+- **Underweight**: Cautious view; reduce exposure/trim profits.
+- **Sell**: High conviction bear case; exit immediately.
+- **Strong Sell**: Extreme conviction; structural failure identified.
+
+---
+
+**CRITICAL LOGICAL CONSISTENCY RULE:**
+If your reasoning suggests "waiting for a pullback", "waiting for a better entry", or "waiting for a lower price (e.g., $150)" before buying, you **MUST NOT** select "Buy" or "Strong Buy". In such cases, the only acceptable rating is **HOLD**. 
+
+Your Rating MUST reflect the action to take at the **CURRENT MARKET PRICE**, not a hypothetical future price.
 
 **Context:**
-- Research Manager's investment plan: **{research_plan}**
-- Trader's transaction proposal: **{trader_plan}**
+- Research Manager's plan: {research_plan}
+- Trader's proposal: {trader_plan}
 {lessons_line}
 **Risk Analysts Debate History:**
 {history}
 
 ---
 
-Be decisive and ground every conclusion in specific evidence from the analysts.{get_language_instruction()}"""
+Deliver your final decision in Chinese as requested, but ensure the logic is bulletproof and free of contradictions.{get_language_instruction()}"""
 
         final_trade_decision = invoke_structured_or_freetext(
             structured_llm,

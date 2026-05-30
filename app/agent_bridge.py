@@ -4,10 +4,12 @@ from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from config import settings
 from langchain_core.callbacks import BaseCallbackHandler
+from sys_logger import sys_logger
 
 class ConsoleStreamHandler(BaseCallbackHandler):
     """
     实时打印 Agent 思考过程的处理器 (精简版)
+    并同步推送到系统日志缓冲区
     """
     def on_chat_model_start(self, serialized, messages, **kwargs):
         # 1. 尝试从 LangGraph 元数据中提取当前 Node (Agent) 的名称
@@ -18,26 +20,16 @@ class ConsoleStreamHandler(BaseCallbackHandler):
         if not node_name:
             node_name = serialized.get("name", "")
 
-        # 3. 过滤掉内部状态转换消息
-        if messages and len(messages[0]) > 0:
-            last_msg = messages[0][-1]
-            content = ""
-            if isinstance(last_msg, dict):
-                content = last_msg.get('content', '')
-            elif hasattr(last_msg, 'content'):
-                content = str(last_msg.content)
-                
-            if "Continue" in content:
-                return 
-
         display_name = node_name if node_name else "Agent"
         model_name = serialized.get("kwargs", {}).get("model", "DeepSeek")
         
-        print(f"\n[Thinking] {display_name} ({model_name}) 正在深度思考中...", flush=True)
+        msg = f"🧠 {display_name} ({model_name}) 正在深度思考..."
+        sys_logger.info(msg)
 
     def on_tool_start(self, serialized, input_str, **kwargs):
         tool_name = serialized.get("name", "Unknown Tool")
         if tool_name in ["_get_current_time"]: return
+        sys_logger.info(f"🛠️ 正在调用工具: {tool_name} (输入: {input_str[:100]}...)")
         print(f"  [Tool] 正在调用工具: {tool_name}...", flush=True)
 
     def on_tool_end(self, output, **kwargs):
@@ -69,15 +61,20 @@ class AgentBridge:
         self.config["checkpoint_enabled"] = False 
         self.config["max_debate_rounds"] = 1 # 针对 2G 内存和速度优化，设为 1 轮
         self.config["max_recur_limit"] = 50 # 限制递归次数，防止死循环
+        self.config["output_language"] = "Chinese" # <--- 关键：确保 PM 和分析师最终输出中文
         
         # 增加实时日志处理器
         self.callbacks = [ConsoleStreamHandler()]
         
         # 注入配置
+        # 强制锁定 temperature 为 0，确保金融决策的一致性
+        llm_kwargs = {"temperature": 0, "top_p": 0.1}
+        
         self.agent_graph = TradingAgentsGraph(
             debug=True, 
             config=self.config,
-            callbacks=self.callbacks
+            callbacks=self.callbacks,
+            **llm_kwargs
         )
 
 
@@ -100,6 +97,7 @@ class AgentBridge:
             decision = {
                 "action": rating,
                 "rationale": final_state.get("final_trade_decision", "无详细理由"),
+                "fact_sheet": final_state.get("fact_sheet", "No fact sheet generated."),
                 "reports": {
                     'market': final_state.get('market_report'),
                     'sentiment': final_state.get('sentiment_report'),
@@ -152,9 +150,20 @@ class AgentBridge:
                 temperature=0.1
             )
             content = resp.choices[0].message.content
+            def extract_rating(content):
+                content_up = content.upper()
+                if "STRONG BUY" in content_up or "强烈买入" in content: return "Strong Buy"
+                if "BUY" in content_up or "买入" in content: return "Buy"
+                if "STRONG SELL" in content_up or "强烈卖出" in content: return "Strong Sell"
+                if "SELL" in content_up or "卖出" in content: return "Sell"
+                if "OVERWEIGHT" in content_up or "增持" in content: return "Overweight"
+                if "UNDERWEIGHT" in content_up or "减持" in content: return "Underweight"
+                return "Hold"
+
+            rating = extract_rating(content)
+
             return {
-                "action": "买入" if "买入" in content or "BUY" in content.upper() else "持有",
-                "quantity": "N/A",
+                "action": rating,
                 "rationale": content,
                 "debate_summary": "配额限制，已启动备用单兵大脑生成中文研判。"
             }

@@ -27,7 +27,40 @@ class PortfolioManager:
             )''')
             cursor.execute('''CREATE TABLE IF NOT EXISTS fund_meta (key TEXT PRIMARY KEY, value REAL)''')
             cursor.execute('''CREATE TABLE IF NOT EXISTS nav_history (date TEXT PRIMARY KEY, nav REAL, total_value_usd REAL)''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS pending_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT, side TEXT, quantity INTEGER, price REAL, rationale TEXT, timestamp DATETIME
+            )''')
             conn.commit()
+
+    def add_pending_order(self, symbol, side, price, rationale=""):
+        """添加待处理订单 (由 Agent 建议)"""
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # 默认建议买入 100 股或根据组合价值计算 (此处简化为 10 股作为占位)
+        quantity = 10 
+        try:
+            with self._get_conn() as conn:
+                conn.execute("INSERT INTO pending_orders (symbol, side, quantity, price, rationale, timestamp) VALUES (?,?,?,?,?,?)",
+                             (symbol.upper(), side.upper(), quantity, price, rationale, ts))
+                conn.commit()
+            return True, "✅ 建议已加入预挂单队列"
+        except Exception as e: return False, str(e)
+
+    def get_pending_orders(self):
+        """获取所有待处理建议"""
+        try:
+            with self._get_conn() as conn:
+                return pd.read_sql_query("SELECT * FROM pending_orders ORDER BY timestamp DESC", conn).to_dict('records')
+        except: return []
+
+    def clear_pending_order(self, order_id):
+        """清除或执行后删除建议"""
+        try:
+            with self._get_conn() as conn:
+                conn.execute("DELETE FROM pending_orders WHERE id=?", (order_id,))
+                conn.commit()
+            return True, "建议已清除"
+        except Exception as e: return False, str(e)
 
     def record_transaction(self, symbol, side, quantity, price, date=None):
         symbol = symbol.upper()
