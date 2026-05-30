@@ -30,13 +30,15 @@ from pydantic import BaseModel, Field
 
 
 class PortfolioRating(str, Enum):
-    """5-tier rating used by the Research Manager and Portfolio Manager."""
+    """7-tier rating used by the Research Manager and Portfolio Manager."""
 
+    STRONG_BUY = "Strong Buy"
     BUY = "Buy"
     OVERWEIGHT = "Overweight"
     HOLD = "Hold"
     UNDERWEIGHT = "Underweight"
     SELL = "Sell"
+    STRONG_SELL = "Strong Sell"
 
 
 class TraderAction(str, Enum):
@@ -45,7 +47,7 @@ class TraderAction(str, Enum):
     The Trader's job is to translate the Research Manager's investment plan
     into a concrete transaction proposal: should the desk execute a Buy, a
     Sell, or sit on Hold this round.  Position sizing and the nuanced
-    Overweight / Underweight calls happen later at the Portfolio Manager.
+    Overweight / Underweight / Strong Buy calls happen later at the Portfolio Manager.
     """
 
     BUY = "Buy"
@@ -69,10 +71,10 @@ class ResearchPlan(BaseModel):
 
     recommendation: PortfolioRating = Field(
         description=(
-            "The investment recommendation. Exactly one of Buy / Overweight / "
-            "Hold / Underweight / Sell. Reserve Hold for situations where the "
-            "evidence on both sides is genuinely balanced; otherwise commit to "
-            "the side with the stronger arguments."
+            "The investment recommendation. Exactly one of Strong Buy / Buy / "
+            "Overweight / Hold / Underweight / Sell / Strong Sell. "
+            "Reserve Hold for situations where the evidence on both sides is "
+            "genuinely balanced; otherwise commit to the side with the stronger arguments."
         ),
     )
     rationale: str = Field(
@@ -179,8 +181,9 @@ class PortfolioDecision(BaseModel):
 
     rating: PortfolioRating = Field(
         description=(
-            "The final position rating. Exactly one of Buy / Overweight / Hold / "
-            "Underweight / Sell, picked based on the analysts' debate."
+            "The final position rating. Exactly one of Strong Buy / Buy / "
+            "Overweight / Hold / Underweight / Sell / Strong Sell, "
+            "picked based on the analysts' debate."
         ),
     )
     executive_summary: str = Field(

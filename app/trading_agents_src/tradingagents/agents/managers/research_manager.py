@@ -26,13 +26,15 @@ def create_research_manager(llm):
 ---
 
 **Rating Scale** (use exactly one):
-- **Buy**: Strong conviction in the bull thesis; recommend taking or growing the position
+- **Strong Buy**: Exceptional conviction in the bull thesis; major growth catalysts identified
+- **Buy**: Solid conviction in the bull thesis; recommend taking or growing the position
 - **Overweight**: Constructive view; recommend gradually increasing exposure
 - **Hold**: Balanced view; recommend maintaining the current position
 - **Underweight**: Cautious view; recommend trimming exposure
-- **Sell**: Strong conviction in the bear thesis; recommend exiting or avoiding the position
+- **Sell**: Conviction in the bear thesis; recommend exiting or avoiding the position
+- **Strong Sell**: Extreme conviction in the bear thesis; structural or terminal risks identified
 
-Commit to a clear stance whenever the debate's strongest arguments warrant one; reserve Hold for situations where the evidence on both sides is genuinely balanced.
+Commit to a clear, high-conviction stance (e.g., Strong Buy or Strong Sell) whenever the debate's strongest arguments warrant one; reserve Hold ONLY for situations where the evidence on both sides is genuinely, mathematically balanced. Avoid being middle-of-the-road.
 
 ---
 

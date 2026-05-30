@@ -15,6 +15,8 @@ from finnhub_provider import finnhub_provider
 from fmp_provider import fmp_provider
 from backtester import backtester
 from portfolio_manager import portfolio_manager
+from wechat_writer import wechat_writer
+from sys_logger import sys_logger
 
 class TitanStrategyV2:
     def __init__(self):
@@ -159,28 +161,131 @@ class TitanStrategyV2:
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         symbol_dir = os.path.join(base_path, "docs", "projects", "titan-lite", "reports", symbol)
         os.makedirs(symbol_dir, exist_ok=True)
-        date_str = datetime.now().strftime('%Y-%m-%d')
+        now = datetime.now()
+        date_str = now.strftime('%Y-%m-%d')
+        file_ts = now.strftime('%Y-%m-%d_%H%M')
         profile = data_provider.get_company_details(symbol)
         
         meta_path = os.path.join(symbol_dir, "metadata.json")
-        current_meta = {"date": date_str, "price": item['current_price'], "rating": decision.get('action', 'HOLD'), "pe": item.get('pe', 0), "roe": item.get('roe', 0), "fact_score": verify_data.get('fact_score', 0), "upside": item.get('upside', 0), "summary_snippet": profile.get('summary', '')[:50] + "..."}
+        current_meta = {
+            "date": date_str, 
+            "file": file_ts, # 记录对应的文件名
+            "price": item['current_price'], 
+            "rating": decision.get('action', 'HOLD'), 
+            "pe": item.get('pe', 0), 
+            "roe": item.get('roe', 0), 
+            "fact_score": verify_data.get('fact_score', 0), 
+            "upside": item.get('upside', 0), 
+            "summary_snippet": profile.get('summary', '')[:50] + "..."
+        }
         history = []
         if os.path.exists(meta_path):
             try:
                 with open(meta_path, "r") as f: history = json.load(f)
             except: pass
-        history = [h for h in history if h['date'] != date_str]
+        
+        # 不再删除同日期的历史，允许一天多次研判共存
         history.insert(0, current_meta)
-        history = history[:10]
+        history = history[:15] # 稍微增加保存上限
         with open(meta_path, "w") as f: json.dump(history, f, indent=4)
         
-        # 写入具体日度研报 (使用原生 Pager)
+        # 写入具体日度研报 (使用含时间戳的文件名)
         refined = self._refine_report_with_ai(decision, symbol)
-        full_md = f"---\ntitle: {symbol} 深度研报 ({date_str})\nprev: {{ text: '{symbol} 看板', link: './index' }}\nnext: false\n---\n\n# 📜 {symbol} 研报档案 - {date_str}\n\n{refined}"
-        with open(os.path.join(symbol_dir, f"{date_str}.md"), "w") as f: f.write(full_md)
+        full_md = f"""---
+title: {symbol} 深度研报 ({file_ts})
+prev: {{ text: '{symbol} 看板', link: './index' }}
+next: false
+---
+
+<script setup>
+import ReportArtifacts from '../../ReportArtifacts.vue'
+</script>
+
+# 📜 {symbol} 研报档案 - {file_ts}
+
+<ReportArtifacts symbol="{symbol}" date="{date_str}" />
+
+{refined}
+"""
+        with open(os.path.join(symbol_dir, f"{file_ts}.md"), "w") as f: f.write(full_md)
+        
+        # --- Phase 3: Actionable Artifacts ---
+        self._generate_actionable_artifacts(symbol, symbol_dir, item, decision)
+        self._generate_wechat_post(symbol, symbol_dir, decision)
+        
+        # 3. 对接 PM 预挂单队列
+        action = decision.get('action', '').upper()
+        if any(kw in action for kw in ["BUY", "SELL", "OVERWEIGHT", "UNDERWEIGHT"]):
+            side = "BUY" if any(kw in action for kw in ["BUY", "OVERWEIGHT"]) else "SELL"
+            portfolio_manager.add_pending_order(
+                symbol, side, item.get('current_price'), 
+                rationale=decision.get('rationale', '')[:500]
+            )
         
         self._update_symbol_dashboard(symbol, symbol_dir, history, item, decision, profile)
         self.update_report_index(symbol, skip_build=skip_build)
+
+    def _generate_actionable_artifacts(self, symbol, symbol_dir, item, decision):
+        """生成结构化交易指令和估值模型"""
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        
+        # 尝试从 rationale 中提取目标价 (多语言、多格式支持)
+        target_price = item.get('target_price') or 0
+        rationale = decision.get('rationale', '')
+        
+        # 如果原始数据中没有或为0，从 AI 研报中二次提取
+        if target_price <= 0:
+            import re
+            # 匹配: Price Target, 目标价, 目标位, 可能带 $, **, : 等
+            patterns = [
+                r'(?:Price Target|目标价|目标位)[:：\s*]+(?:\$)?\s*([\d\.]+)',
+                r'\*\*Price Target\*\*:?\s*(?:\$)?\s*([\d\.]+)',
+                r'target_price[:：]\s*([\d\.]+)'
+            ]
+            for pat in patterns:
+                match = re.search(pat, rationale, re.IGNORECASE)
+                if match:
+                    try:
+                        target_price = float(match.group(1))
+                        break
+                    except: continue
+        
+        # 最终兜底：如果还是 0，给一个相对于现价 10% 的溢价作为占位 (避免 0 导致的 Upside 异常)
+        if target_price <= 0:
+            target_price = round(item.get('current_price', 0) * 1.1, 2)
+        
+        # 1. trade.json
+        trade_data = {
+            "symbol": symbol,
+            "action": decision.get('action', 'HOLD'),
+            "timestamp": date_str,
+            "target_price": target_price,
+            "current_price": item.get('current_price'),
+            "upside": (target_price - item.get('current_price')) / item.get('current_price') if target_price and item.get('current_price') else 0,
+            "suggested_size": "5%-8%" if any(kw in decision.get('action', '').upper() for kw in ["BUY", "OVERWEIGHT"]) else "0%",
+            "rationale_short": decision.get('rationale', '').strip()[:300] + "..."
+        }
+        with open(os.path.join(symbol_dir, "trade.json"), "w") as f:
+            json.dump(trade_data, f, indent=4)
+
+        # 2. valuation_model.csv
+        import csv
+        with open(os.path.join(symbol_dir, "valuation_model.csv"), "w", newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Metric", "Value", "Source"])
+            writer.writerow(["Symbol", symbol, "System"])
+            writer.writerow(["Current Price", item.get('current_price'), "Market"])
+            writer.writerow(["Target Price", target_price, "Analyst Aggregation"])
+            writer.writerow(["PE Ratio", item.get('pe'), "Fundamentals"])
+            writer.writerow(["ROE", item.get('roe'), "Fundamentals"])
+            writer.writerow(["Upside", f"{trade_data['upside']:.2%}" if trade_data['upside'] else "N/A", "Calculation"])
+
+    def _generate_wechat_post(self, symbol, symbol_dir, decision):
+        """生成自媒体推文草稿"""
+        fact_sheet = decision.get('fact_sheet', 'No facts available.')
+        post_content = wechat_writer.generate_post(symbol, decision, fact_sheet)
+        with open(os.path.join(symbol_dir, "wechat_post.md"), "w") as f:
+            f.write(post_content)
 
     def _refine_report_with_ai(self, decision, symbol):
         raw_reports = ""
@@ -188,23 +293,48 @@ class TitanStrategyV2:
             if content: raw_reports += f"### {name}\n{content}\n"
         curr_date = datetime.now().strftime('%Y-%m-%d')
         refine_prompt = f"你是一位顶级分析师。请为 {symbol} 整理研报正文。日期锁定 {curr_date}。严禁废话。第一行必须是Markdown标题。深度标的格式 # 📊 {symbol} 深度研究。快筛标的格式 ## ⚡ 闪电决策简报。"
+        material = f"决策建议：{decision.get('action')}\n\n[核心论证]\n{decision.get('rationale')}\n\n[调研事实清单 (Fact Sheet)]\n{decision.get('fact_sheet')}\n\n[专项调研报告]\n{raw_reports}"
         try:
             from openai import OpenAI
             client = OpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
-            resp = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "system", "content": "你是一个专业的投研机器人。"},{"role": "user", "content": f"{refine_prompt}\n素材：{decision.get('action')}, {decision.get('rationale')}\n{raw_reports}"}], temperature=0.1)
+            resp = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "system", "content": "你是一个专业的投研机器人。"},{"role": "user", "content": f"{refine_prompt}\n素材：\n{material}"}], temperature=0.1)
             return resp.choices[0].message.content.strip()
         except: return f"AI 润色失败。{decision.get('rationale')}"
 
     def _update_symbol_dashboard(self, symbol, symbol_dir, history, item, decision, profile=None):
-        latest = history[0]; first = history[-1]
-        change = (latest['price'] - first['price']) / first['price'] if first['price'] != 0 else 0
+        latest = history[0]
         if not profile: profile = data_provider.get_company_details(symbol)
         financials = data_provider.get_financial_highlights(symbol)
-        bt = backtester.run_simple_backtest(symbol)
-        bt_summary = bt.get('summary', '暂无回测数据') if bt else '暂无回测数据'
         
-        table = "| 日期 | 价格 | 评级 | PE | 预期涨幅 |\n| :--- | :--- | :--- | :--- | :--- |\n"
-        for h in history[:5]: table += f"| {h['date']} | ${h['price']} | {h['rating']} | {h['pe']:.1f} | {h['upside']:.2%} |\n"
+        # 1. 运行深度回测并获取波动率
+        bt_data = backtester.run_simple_backtest(symbol)
+        if bt_data:
+            with open(os.path.join(symbol_dir, "backtest.json"), "w") as f:
+                json.dump(bt_data, f, indent=4)
+        
+        # 2. 计算估值水位与波动等级
+        upside = latest.get('upside', 0) or 0
+        if upside > 0.3: val_level = "严重低估 (Deep Value)"
+        elif upside > 0.15: val_level = "适度低估 (Undervalued)"
+        elif upside > -0.05: val_level = "合理估值 (Fair Value)"
+        else: val_level = "估值过高 (Overvalued)"
+
+        vol_str = bt_data['metrics'].get('volatility', '0%').replace('%', '') if bt_data else "0"
+        try:
+            vol_val = float(vol_str)
+            if vol_val > 60: vol_level = "🔥 极端波动 (Extreme)"
+            elif vol_val > 35: vol_level = "⚠️ 高波动 (High)"
+            elif vol_val > 20: vol_level = "⚖️ 中等波动 (Moderate)"
+            else: vol_level = "🛡️ 低波动 (Low)"
+        except: vol_level = "未知"
+
+        table = "| 时间 | 价格 | 评级 | PE | 预期涨幅 |\n| :--- | :--- | :--- | :--- | :--- |\n"
+        for h in history[:10]: 
+            pe_val = h.get('pe', 0) or 0
+            up_val = h.get('upside', 0) or 0
+            display_ts = h.get('file', h['date'])
+            table += f"| {display_ts} | ${h['price']} | {h['rating']} | {pe_val:.1f} | {up_val:.2%} |\n"
+        
         summary = self._get_ai_summary(symbol, decision)
         
         # 个股看板使用原生 Pager 指向档案馆
@@ -214,6 +344,13 @@ prev: {{ text: '研报历史库', link: '../index' }}
 next: false
 ---
 
+<script setup>
+import BacktestChart from '../../BacktestChart.vue'
+import ExternalCockpit from '../../ExternalCockpit.vue'
+import HistoryManager from '../../HistoryManager.vue'
+import btData from './backtest.json'
+</script>
+
 # 🚀 {symbol} 投研价值看板
 
 ## 1. 🔍 公司业务 DNA
@@ -221,21 +358,25 @@ next: false
 {profile.get('summary')}
 :::
 
-## 2. 📌 实时状态卡片
+## 2. 🎮 实时情报驾驶舱 (Cockpit)
+<ExternalCockpit symbol="{symbol}" />
+
+## 3. 📌 实时状态卡片
 ::: tip 核心指标
-- **当前建议**: `{latest['rating']}`
-- **实时价格**: `${latest['price']}`
-- **历史涨跌**: {change:.2%}
-- **预期空间**: {latest.get('upside', 0):.2%}
+- **当前建议**: `{decision.get('action', 'N/A')}`
+- **实时价格**: `${item['current_price']}`
+- **估值水位**: `{val_level}`
+- **波动等级**: `{vol_level}`
+- **预期空间**: {upside:.2%}
 :::
 
-## 3. 📊 财务核心
+## 3. 📉 历史表现 (Backtest)
+<BacktestChart symbol="{symbol}" :btData="btData" />
+
+## 4. 📊 财务核心
 - 营收增长: {self._fmt_pct(financials.get('rev_growth'))}
 - 净利润率: {self._fmt_pct(financials.get('net_margin'))}
-- 自由现金流: ${self._fmt_large(financials.get('fcf'))}
-
-## 4. 📈 历史回测性能
-{bt_summary}
+- 自由现金流: ${self._fmt_val(financials.get('fcf'))}
 
 ## 5. 📑 指标演变追踪
 {table}
@@ -243,57 +384,50 @@ next: false
 ## 6. 🧠 投研三段论
 {summary}
 
-## 7. 📂 历史深度研报
-"""
+## 7. 📑 历史深度研报档案
+> 下方表格列出了该标的在不同时间节点的详细研判档案，您可以查阅具体逻辑或清理过期报告。
 
-        for h in history: md += f"- [{h['date']} 深度研判报告](./{h['date']}.md)\n"
+<HistoryManager symbol="{symbol}" />
+"""
         with open(os.path.join(symbol_dir, "index.md"), "w") as f: f.write(md)
 
     def _get_ai_summary(self, symbol, decision):
-        prompt = f"简述 {symbol} 的 1.历史回顾 2.当前状态 3.未来预期。决策：{decision.get('action')}"
+        prompt = f"请为 {symbol} 的研报做一个三段论总结（历史回顾、当前状态、未来预期），并结合决策 {decision.get('action')} 给出理由。要求：专业、精炼。"
         try:
             from openai import OpenAI
             client = OpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_BASE_URL)
             resp = client.chat.completions.create(model="deepseek-chat", messages=[{"role": "user", "content": prompt}])
             return resp.choices[0].message.content
-        except: return "生成中..."
+        except: return "AI 总结生成失败。"
 
-    def _fmt_pct(self, v): return f"{v*100:.2%}" if v is not None else "N/A"
-    def _fmt_large(self, v):
-        if v is None: return "N/A"
-        if abs(v) > 1e12: return f"{v/1e12:.2f}T"
-        if abs(v) > 1e9: return f"{v/1e9:.2f}B"
-        return str(v)
-
-    def update_report_index(self, symbol, skip_build=False):
+    def update_report_index(self, symbol=None, skip_build=False):
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         reports_root = os.path.join(base_path, "docs", "projects", "titan-lite", "reports")
         index_path = os.path.join(reports_root, "index.md")
         symbols = sorted([d for d in os.listdir(reports_root) if os.path.isdir(os.path.join(reports_root, d)) and d != "macro"])
-        
+
         # 全局索引使用原生 Pager 指向基金和宏观
         md = f"""---
 title: 研报档案馆
 prev: {{ text: '我的基金中心', link: '/projects/titan-lite/portfolio' }}
 next: {{ text: '宏观全景展望', link: './market_overview' }}
 ---
-# 📑 研报历史库
 
-::: info 🌍 宏观视角
-- [**全市场宏观全景展望**](./market_overview.md)
-:::
+<script setup>
+import ArchiveManager from './ArchiveManager.vue'
+</script>
 
----\n## 📈 覆盖个股列表\n"""
-        for s in symbols:
-            blurb = "暂无简介"; l_date = ""
-            meta_path = os.path.join(reports_root, s, "metadata.json")
-            if os.path.exists(meta_path):
-                try:
-                    with open(meta_path, "r") as f:
-                        meta = json.load(f)
-                        if meta: blurb = meta[0].get('summary_snippet', '暂无简介'); l_date = meta[0].get('date', '')
-                except: pass
-            md += f"- [📊 **{s}** 总览看板](./{s}/index.md) — *{blurb}* ({l_date})\n"
+# 📑 数字化研报档案馆 (Digital Archive)
+
+> 基于多维元数据索引，支持对历史研报的全量检索、分类筛选与生命周期管理。
+
+<ArchiveManager />
+
+---
+
+## 🌍 宏观视角
+- [**最新全市场宏观全景展望**](./market_overview.md)
+"""
         with open(index_path, "w") as f: f.write(md)
         if not skip_build: self._trigger_final_build()
 
@@ -302,20 +436,66 @@ next: {{ text: '宏观全景展望', link: './market_overview' }}
         self.bot.send_markdown(msg, mode="private")
 
     def analyze_single_ticker(self, symbol):
-        print(f">>> [Single] 专项研判 {symbol}...")
+        sys_logger.clear()
+        sys_logger.info(f"🚀 开始针对 {symbol} 的深度研判流程", stage="Initializing", progress=5)
         try:
+            # 1. 获取基本数据 (FMP 优先)
+            sys_logger.info(f"🔍 步骤 1/4: 调取 FMP/MCP 数据源进行基本面与行情分析...", stage="Data Fetching", progress=15)
             curr = data_provider.get_history_price(symbol).iloc[-1]
+            
+            # 优先从 FMP 获取机构目标价
+            estimates = fmp_provider.get_analyst_estimates(symbol)
+            t_price = estimates.get('estimatedPriceAvg', 0)
+            
             y_info = data_provider.get_analyst_info(symbol)
-            item = {'symbol': symbol, 'current_price': curr, 'target_price': y_info.get('targetMeanPrice', curr*1.1), 'upside': y_info.get('upside', 0.1), 'pe': y_info.get('peRatioTTM', 0), 'roe': y_info.get('roeTTM', 0), 'sector': y_info.get('sector', 'Unknown')}
+            if t_price <= 0:
+                t_price = y_info.get('targetMeanPrice', 0)
+            
+            # 如果依然没有数据，计算一个更真实的 50 日均线溢价作为占位，而不是死板的 10%
+            if t_price <= 0:
+                t_price = curr * 1.05 
+            
+            item = {
+                'symbol': symbol, 
+                'current_price': curr, 
+                'target_price': t_price, 
+                'upside': (t_price - curr) / curr if curr != 0 else 0, 
+                'pe': y_info.get('peRatioTTM', 0) or 0, 
+                'roe': y_info.get('roeTTM', 0) or 0, 
+                'sector': y_info.get('sector', 'Unknown')
+            }
+            
+            # 2. 事实核查与新闻
+            sys_logger.info(f"🛡️ 步骤 2/4: 执行社交媒体舆情核查与异常信号识别...", stage="Verification", progress=35)
             news = finnhub_provider.get_company_news(symbol)
             fact_check, fact_score = verification_engine.verify_news(symbol, news)
             div = verification_engine.check_divergence(symbol)
             ins = verification_engine.get_insider_signal(symbol)
             v_ctx = f"\n[事实核查]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价: {div}\n- 高管: {ins}\n"
+            
+            # 3. 深度认知博弈
+            sys_logger.info(f"🧠 步骤 3/4: 启动多 Agent 认知博弈 (Thesis-First 架构)...", stage="Cognitive Debate", progress=50)
             dec = agent_bridge.analyze_ticker(symbol, context_extra=v_ctx)
-            if dec: self.save_to_web(symbol, item, dec, {'fact_check': fact_check, 'fact_score': fact_score, 'divergence': div, 'insider': ins})
-            return True
-        except: return False
+            
+            # 4. 资产化与同步
+            if dec:
+                sys_logger.info(f"📤 步骤 4/4: 正在生成可执行资产 (trade.json, wechat_post) 并同步...", stage="Exporting", progress=85)
+                self.save_to_web(symbol, item, dec, {'fact_check': fact_check, 'fact_score': fact_score, 'divergence': div, 'insider': ins})
+                sys_logger.info(f"✅ {symbol} 研判任务圆满完成！建议: {dec.get('action')}", stage="Completed", progress=100)
+                return True
+            else:
+                sys_logger.info(f"❌ {symbol} 智能辩论引擎未产出有效结论。")
+                return False
+        except Exception as e:
+            sys_logger.info(f"💥 系统性崩溃: {str(e)}")
+            return False
+
+    def _fmt_pct(self, v): return f"{v*100:.2%}" if v is not None else "N/A"
+    def _fmt_val(self, v): 
+        if v is None: return "N/A"
+        if v > 1e9: return f"{v/1e9:.2f}B"
+        if v > 1e6: return f"{v/1e6:.2f}M"
+        return f"{v:.2f}"
 
 def run_job(): TitanStrategyV2().execute()
 def run_single(symbol): return TitanStrategyV2().analyze_single_ticker(symbol)

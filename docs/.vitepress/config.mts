@@ -87,7 +87,7 @@ export default withMermaid(defineConfig({
           items: [
             { text: '技术手册总览', link: '/projects/titan-lite/design/design_doc' },
             { text: '系统原理与哲学', link: '/projects/titan-lite/design/architecture_theory' },
-            { text: '施工细节与UI规范', link: '/projects/titan-lite/design/ui_logic_spec' },
+            { text: '施工计划', link: '/projects/titan-lite/design/titan_alpha_plan' },
             { text: 'API 接口手册', link: '/projects/titan-lite/design/api' },
           ]
         },
@@ -109,15 +109,14 @@ export default withMermaid(defineConfig({
           text: 'Python 进阶',
           collapsed: false, // 默认展开
           items: [
-            { text: 'Pandas 性能优化', link: '/notes/python/pandas-opt' },
-            { text: '异步编程实战', link: '/notes/python/async' }
+            { text: 'Python 常用技巧', link: '/notes/python/tricks' }
           ]
         },
         {
-          text: 'DevOps 运维',
+          text: 'Linux & Ops',
           collapsed: true, // 默认折叠
           items: [
-            { text: 'Docker 常用指令', link: '/notes/devops/docker' }
+            { text: 'Linux 常用命令', link: '/notes/linux/commands' }
           ]
         }
       ],
@@ -129,8 +128,7 @@ export default withMermaid(defineConfig({
         {
           text: '年度规划',
           items: [
-            { text: '2026 目标', link: '/thoughts/2026-plan' },
-            { text: '2027 展望', link: '/thoughts/2027-vision' }
+            { text: '2026 目标', link: '/thoughts/2026-plan' }
           ]
         }
       ]

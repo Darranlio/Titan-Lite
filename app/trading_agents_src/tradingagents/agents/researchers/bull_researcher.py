@@ -2,33 +2,38 @@
 
 def create_bull_researcher(llm):
     def bull_node(state) -> dict:
+        symbol = state.get("company_of_interest", "the company")
         investment_debate_state = state["investment_debate_state"]
         history = investment_debate_state.get("history", "")
         bull_history = investment_debate_state.get("bull_history", "")
 
         current_response = investment_debate_state.get("current_response", "")
-        market_research_report = state["market_report"]
-        sentiment_report = state["sentiment_report"]
-        news_report = state["news_report"]
-        fundamentals_report = state["fundamentals_report"]
+        fact_sheet = state.get("fact_sheet", "No fact sheet available.")
 
-        prompt = f"""You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
+        prompt = f"""
+[Role] You are a highly-analytical Bull Researcher. Your goal is to build a rigorous, data-driven investment thesis for {symbol} based *exclusively* on the provided Fact Sheet.
 
-Key points to focus on:
-- Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.
-- Competitive Advantages: Emphasize factors like unique products, strong branding, or dominant market positioning.
-- Positive Indicators: Use financial health, industry trends, and recent positive news as evidence.
-- Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, addressing concerns thoroughly and showing why the bull perspective holds stronger merit.
-- Engagement: Present your argument in a conversational style, engaging directly with the bear analyst's points and debating effectively rather than just listing data.
+[Task]
+1. **Thesis Construction**: Identify the most powerful value drivers from the Fact Sheet.
+2. **Growth & Competitive Edge**: Emphasize scalability, moat, and positive financial trajectories.
+3. **Refutation**: If a Bear argument exists, use specific quantitative data from the Fact Sheet to debunk their risks or show why the rewards outweigh them.
+4. **Logical Sparring**: Directly address the Bear Analyst's points. Do not just list facts; engage in a dynamic logical debate.
 
-Resources available:
-Market research report: {market_research_report}
-Social media sentiment report: {sentiment_report}
-Latest world affairs news: {news_report}
-Company fundamentals report: {fundamentals_report}
-Conversation history of the debate: {history}
-Last bear argument: {current_response}
-Use this information to deliver a compelling bull argument, refute the bear's concerns, and engage in a dynamic debate that demonstrates the strengths of the bull position.
+[Constraints]
+- **Sole Source of Truth**: Use ONLY the provided "Investment Fact Sheet". Never introduce external information or hallucinations.
+- **Language**: Use professional English financial terminology.
+- **Tone**: Persuasive but strictly evidence-based.
+
+### [Investment Fact Sheet]
+{fact_sheet}
+
+### [Debate History]
+{history}
+
+### [Current Bear Argument]
+{current_response}
+
+Please deliver your argument:
 """
 
         response = llm.invoke(prompt)

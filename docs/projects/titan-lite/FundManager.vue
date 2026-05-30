@@ -63,6 +63,7 @@
         <div class="tabs">
           <button @click="switchTab('positions')" :class="{ active: activeTab === 'positions' && viewMode === 'list' }">💼 持仓分析</button>
           <button @click="switchTab('history')" :class="{ active: activeTab === 'history' && viewMode === 'list' }">📜 交易账本</button>
+          <button @click="switchTab('pending')" :class="{ active: activeTab === 'pending' && viewMode === 'list' }">⏳ 待处理建议 <span v-if="pendingOrders.length > 0" class="badge">{{ pendingOrders.length }}</span></button>
         </div>
         <button @click="viewMode = viewMode === 'list' ? 'trade' : 'list'" class="btn sm-btn action-toggle">
           {{ viewMode === 'list' ? '+ 资产录入' : '返回列表' }}
@@ -141,7 +142,7 @@
         </div>
 
         <!-- 交易流水账本 -->
-        <div v-else>
+        <div v-else-if="activeTab === 'history'">
           <h4 class="table-label">🧾 历史成交账本 (Audit Ledger)</h4>
           <table class="data-table">
             <thead>
@@ -157,7 +158,7 @@
             </thead>
             <tbody>
               <tr v-for="tx in tradeHistory" :key="tx.id">
-                <td class="small-text center-align">{{ tx.timestamp.split(' ')[0] }}</td>
+                <td class="small-text center-align">{{ tx.timestamp ? tx.timestamp.split(' ')[0] : '-' }}</td>
                 <td class="center-align"><strong>{{ tx.symbol }}</strong></td>
                 <td class="center-align"><span class="side-tag" :class="tx.side">{{ formatSide(tx.side) }}</span></td>
                 <td class="right-align tabular">{{ tx.quantity }}</td>
@@ -165,6 +166,40 @@
                 <td class="right-align tabular">${{ formatNumber(tx.total) }}</td>
                 <td class="center-align">
                   <button @click="deleteTrade(tx.id)" class="del-btn">撤销</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 待处理建议队列 (Phase 4) -->
+        <div v-else-if="activeTab === 'pending'">
+          <h4 class="table-label">⏳ 智能投研交易建议 (Agent Suggestions)</h4>
+          <div v-if="pendingOrders.length === 0" class="empty-state">暂无待处理建议。启动“个股专项研判”可生成新建议。</div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>建议时间</th>
+                <th>标的代码</th>
+                <th>动作</th>
+                <th>参考价格</th>
+                <th>核心逻辑摘要</th>
+                <th>决策</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="o in pendingOrders" :key="o.id">
+                <td class="small-text center-align">
+                  {{ o.timestamp ? o.timestamp.split(' ')[1] : '-' }}<br>
+                  {{ o.timestamp ? o.timestamp.split(' ')[0] : '' }}
+                </td>
+                <td class="center-align"><strong>{{ o.symbol }}</strong></td>
+                <td class="center-align"><span class="side-tag" :class="o.side">{{ formatSide(o.side) }}</span></td>
+                <td class="right-align tabular">${{ formatNumber(o.price) }}</td>
+                <td class="small-text wrap-text">{{ o.rationale }}</td>
+                <td class="center-align actions-cell">
+                  <button @click="executeOrder(o.id)" class="approve-btn">执行</button>
+                  <button @click="clearOrder(o.id)" class="dismiss-btn">忽略</button>
                 </td>
               </tr>
             </tbody>
@@ -220,9 +255,21 @@
 import { ref, onMounted, computed } from 'vue'
 import { marked } from 'marked'
 
-const status = ref({ nav: 1.0, total_value_usd: 0, cash_positions: [], us_equities: [], hk_equities: [] })
-const analysis = ref({ metrics: {}, history: { user: [], benchmark: [] } })
+const status = ref({ 
+  nav: '1.0000', 
+  total_value_usd: 0, 
+  total_value_hkd: 0, 
+  total_value_cny: 0, 
+  cash_positions: [], 
+  us_equities: [], 
+  hk_equities: [] 
+})
+const analysis = ref({ 
+  metrics: { sharpe: '-', max_drawdown: '-', volatility: '-', total_return: '0.00%' }, 
+  history: { user: [], benchmark: [] } 
+})
 const tradeHistory = ref([])
+const pendingOrders = ref([])
 const activeTab = ref('positions')
 const viewMode = ref('list')
 const diagnosis = ref('')
@@ -244,6 +291,8 @@ const fetchAll = async () => {
     if (aResp.ok) analysis.value = await aResp.json();
     const hResp = await fetch(`${API_BASE}/portfolio/history`); 
     if (hResp.ok) tradeHistory.value = await hResp.json();
+    const pResp = await fetch(`${API_BASE}/portfolio/pending`); 
+    if (pResp.ok) pendingOrders.value = await pResp.json();
   } catch (e) { console.error("Sync failed", e) }
 }
 
@@ -286,6 +335,22 @@ const deleteTrade = async (id) => {
   } catch (e) { alert("撤销失败") }
 }
 
+const executeOrder = async (id) => {
+  if (!confirm("确定将此建议转换为正式交易记录吗？（将按建议价格扣减资金）")) return
+  try {
+    const res = await (await fetch(`${API_BASE}/portfolio/pending/execute/${id}`, { method: 'POST' })).json()
+    alert(res.msg); await fetchAll(); activeTab.value = 'history';
+  } catch (e) { alert("执行失败") }
+}
+
+const clearOrder = async (id) => {
+  if (!confirm("确定忽略此建议吗？")) return
+  try {
+    const res = await (await fetch(`${API_BASE}/portfolio/pending/${id}`, { method: 'DELETE' })).json()
+    await fetchAll()
+  } catch (e) { alert("清除失败") }
+}
+
 const fetchDiagnosis = async () => {
   diagLoading.value = true
   try { diagnosis.value = (await (await fetch(`${API_BASE}/portfolio/diagnosis`)).json()).report }
@@ -319,6 +384,10 @@ onMounted(fetchAll)
 .highlight { color: var(--vp-c-brand); }
 .pnl-value { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
+.badge { background: #d32f2f; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.65rem; margin-left: 4px; vertical-align: middle; }
+.empty-state { padding: 3rem; text-align: center; color: var(--vp-c-text-3); font-style: italic; }
+.wrap-text { white-space: normal !important; min-width: 250px; line-height: 1.4; }
+
 .section { background: var(--vp-c-bg-soft); padding: 1.8rem; border-radius: 16px; margin-bottom: 1.8rem; border: 1px solid var(--vp-c-divider); }
 .section-title { margin-bottom: 1.5rem !important; text-align: left !important; width: 100%; }
 .header-with-btn { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
@@ -351,6 +420,8 @@ td { padding: 12px 6px; border-bottom: 1px solid var(--vp-c-divider); font-size:
 .sm-btn { background: var(--vp-c-brand-soft); color: var(--vp-c-brand); }
 .trade-btn { background: var(--vp-c-brand); color: white; width: 100%; height: 50px; font-size: 1.1rem; }
 .ai-btn { background: #43a047; color: white; min-width: 150px; white-space: nowrap; }
+.approve-btn { background: #43a047; color: white; font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer; margin-right: 5px; }
+.dismiss-btn { background: none; border: 1px solid var(--vp-c-divider); color: var(--vp-c-text-3); font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
 .del-btn { color: #d32f2f; background: none; border: 1px solid #d32f2f; font-size: 0.75rem; padding: 4px 12px; border-radius: 6px; }
 .del-btn:hover { background: rgba(211, 47, 47, 0.1); }
 
