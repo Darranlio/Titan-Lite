@@ -16,11 +16,11 @@
       <div class="author-content">
         <div class="header-row">
           <h2 class="author-name">Darranlio</h2>
-          <span class="role-badge">算法工程师</span>
+          <span class="role-badge">美团无人机</span>
         </div>
         
         <p class="author-bio">
-          美团 UAV 感知算法工程师 <span class="dot">·</span> 量化投资探索者
+          算法工程师
         </p>
         
         <div class="social-actions">

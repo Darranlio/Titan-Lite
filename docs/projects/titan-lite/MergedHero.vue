@@ -11,8 +11,8 @@
           <h1 class="hero-title">
             <span class="clip">Digital Asset Lab</span>
           </h1>
-          <p class="hero-tagline">Professional Quant & AI Solutions</p>
-          <p class="hero-sub">基于 DeepSeek 认知博弈架构的个人投资决策终端</p>
+          <p class="hero-tagline">Apex AI & Quant Execution Terminal</p>
+          <p class="hero-sub">您的私人华尔街团队。融合顶尖 AI 算力与机构级量化模型，全天候无情捕捉市场暴利信号，助您实现交易维度的降维打击。</p>
           
           <div class="hero-actions">
             <a href="/projects/titan-lite/portfolio" class="btn-brand">🏦 我的基金中心</a>
