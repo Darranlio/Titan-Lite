@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import json
+import shutil
 
 from config import settings
 from data_provider import data_provider
@@ -15,32 +16,64 @@ from finnhub_provider import finnhub_provider
 from fmp_provider import fmp_provider
 from backtester import backtester
 from portfolio_manager import portfolio_manager
+from archive_manager import archive_manager
 from wechat_writer import wechat_writer
 from sys_logger import sys_logger
+from analytical_engine import analytical_engine
 
 class TitanStrategyV2:
     def __init__(self):
         self.bot = WeComBot()
         self.risk = MacroRisk()
+        self.archive_mgr = archive_manager
+        self.portfolio_mgr = portfolio_manager
 
-    def execute(self):
-        print(">>> Titan-Lite v5.7 (Navigation Engine) 启动...")
+    def execute(self, user_ctx=None, market='Global'):
+        if user_ctx:
+            from archive_manager import ArchiveManager
+            from portfolio_manager import PortfolioManager
+            self.archive_mgr = ArchiveManager(storage_root=user_ctx.storage_root)
+            self.portfolio_mgr = PortfolioManager(storage_root=user_ctx.storage_root)
+            sys_logger.__init__(storage_root=user_ctx.storage_root)
+        else:
+            self.archive_mgr = archive_manager
+            self.portfolio_mgr = portfolio_manager
+
+        sys_logger.info(f">>> Titan-Lite v5.7 (Navigation Engine) [{market}] 启动...", stage="Market Scan", progress=5, task_type="batch")
         is_safe, risk_msg = self.risk.check()
         if not is_safe:
             self.bot.send_markdown(f"# ⛔ 系统熔断\n{risk_msg}", mode="private")
+            sys_logger.info(f"⛔ 系统熔断: {risk_msg}", stage="Halted", progress=0, task_type="batch")
             return
 
-        candidates = valuation_screener.run()
+        sys_logger.info(f"🔍 步骤 1/4: 正在进行{market}全市场初筛 (筛选潜力洼地)...", stage="Screening", progress=15, task_type="batch")
+        candidates = valuation_screener.run(market=market)
         if not candidates: 
-            print(">>> 本次扫描未发现符合条件的潜力标的。")
+            sys_logger.info(">>> 本次扫描未发现符合条件的潜力标的。", stage="Completed", progress=100, task_type="batch")
             return
         
+        sys_logger.info(f"✅ 初筛完成，发现 {len(candidates)} 只潜力标的，开始 AI 并发快筛评分...", stage="Fast Filtering", progress=30, task_type="batch")
         prioritized_candidates = []
-        for item in candidates:
-            score, logic = self._fast_ai_filter(item)
-            item['priority_score'] = score
-            item['fast_logic'] = logic
-            prioritized_candidates.append(item)
+        
+        # 使用并发执行 AI 快筛
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_item = {executor.submit(self._fast_ai_filter, item): item for item in candidates}
+            for i, future in enumerate(as_completed(future_to_item)):
+                item = future_to_item[future]
+                try:
+                    score, logic = future.result()
+                    item['priority_score'] = score
+                    item['fast_logic'] = logic
+                    prioritized_candidates.append(item)
+                except:
+                    item['priority_score'] = 50
+                    item['fast_logic'] = "评分失败"
+                    prioritized_candidates.append(item)
+                
+                if i % 5 == 0:
+                    p = 30 + int((i / len(candidates)) * 20)
+                    sys_logger.info(f"  [AI 快筛] 已并发处理 {i}/{len(candidates)} 只标的...", stage="Fast Filtering", progress=p, task_type="batch")
         
         prioritized_candidates.sort(key=lambda x: x['priority_score'], reverse=True)
 
@@ -49,19 +82,25 @@ class TitanStrategyV2:
         light_pool = prioritized_candidates[top_n:]
         scan_results = {"deep": [], "light": []}
 
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        sys_logger.info(f"🧠 步骤 3/4: 启动并发深度研判 (Top {top_n} 标的多 Agent 认知博弈)...", stage="Deep Analysis", progress=55, task_type="batch")
+        # 增加研判并发数到 3
+        with ThreadPoolExecutor(max_workers=3) as executor:
             futures = [executor.submit(self._process_deep_analysis, item) for item in deep_pool]
             for f in futures:
                 res = f.result()
                 if res: scan_results['deep'].append(res)
-            for item in light_pool:
-                res = self._process_light_analysis(item)
+            
+            # 快筛标的也并发执行
+            light_futures = [executor.submit(self._process_light_analysis, item) for item in light_pool]
+            for f in light_futures:
+                res = f.result()
                 if res: scan_results['light'].append(res)
 
+        sys_logger.info("🌏 步骤 4/4: 正在生成宏观全景研判报告并同步看板...", stage="Generating Macro", progress=85, task_type="batch")
         macro_report_md = self._generate_market_panorama(candidates, scan_results)
         self._save_macro_report(macro_report_md)
         self._trigger_final_build()
+        sys_logger.info("✅ 全市场深度扫描任务圆满完成！", stage="Completed", progress=100, task_type="batch")
 
     def _fast_ai_filter(self, item):
         symbol = item['symbol']
@@ -81,12 +120,29 @@ class TitanStrategyV2:
 
     def _process_deep_analysis(self, item):
         symbol = item['symbol']
-        news = finnhub_provider.get_company_news(symbol)
-        fact_check, fact_score = verification_engine.verify_news(symbol, news)
-        div = verification_engine.check_divergence(symbol)
-        ins = verification_engine.get_insider_signal(symbol)
-        v_context = f"\n[事实核查报告]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价表现: {div}\n- 高管行为: {ins}\n"
-        decision = agent_bridge.analyze_ticker(symbol, context_extra=v_context)
+        
+        # 自动处理 A股后缀补全
+        fetch_symbol = symbol
+        is_ashare = False
+        if symbol.isdigit() and len(symbol) == 6:
+            is_ashare = True
+            if symbol.startswith(('60', '68')): fetch_symbol = f"{symbol}.SS"
+            elif symbol.startswith(('00', '30')): fetch_symbol = f"{symbol}.SZ"
+            elif symbol.startswith('8'): fetch_symbol = f"{symbol}.BJ"
+
+        news = finnhub_provider.get_company_news(fetch_symbol)
+        fact_check, fact_score = verification_engine.verify_news(fetch_symbol, news)
+        div = verification_engine.check_divergence(fetch_symbol)
+        ins = verification_engine.get_insider_signal(fetch_symbol)
+        
+        ashare_ctx = ""
+        if is_ashare:
+            a_data = data_provider.get_ashare_specifics(symbol)
+            if a_data and "error" not in a_data:
+                ashare_ctx = f"\n[A股专用审计指标]\n- 市净率(PB): {a_data.get('pb')}\n- 换手率: {a_data.get('turnover_rate')}\n- 主力净流入: {a_data.get('main_inflow')}\n- 总市值: {a_data.get('total_mv')}\n"
+
+        v_context = f"\n[事实核查报告]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价表现: {div}\n- 高管行为: {ins}\n" + ashare_ctx
+        decision = agent_bridge.analyze_ticker(fetch_symbol, context_extra=v_context)
         if decision:
             self.save_to_web(symbol, item, decision, {'fact_check': fact_check, 'fact_score': fact_score, 'divergence': div, 'insider': ins}, skip_build=True)
             self.push_to_wecom(symbol, item, decision, div)
@@ -95,7 +151,13 @@ class TitanStrategyV2:
 
     def _process_light_analysis(self, item):
         symbol = item['symbol']
-        financial_context = f"PE: {item.get('pe', 'N/A')}, ROE: {item.get('roe', 'N/A')}, 预期空间: {item.get('upside', 0):.2%}"
+        # 简单处理 A股后缀
+        fetch_symbol = symbol
+        if symbol.isdigit() and len(symbol) == 6:
+            if symbol.startswith(('60', '68')): fetch_symbol = f"{symbol}.SS"
+            elif symbol.startswith(('00', '30')): fetch_symbol = f"{symbol}.SZ"
+            elif symbol.startswith('8'): fetch_symbol = f"{symbol}.BJ"
+
         decision = {
             "action": "观察 (WATCH)" if item['priority_score'] > 60 else "跳过 (SKIP)",
             "rationale": f"【快筛逻辑】：{item['fast_logic']}\n评分未进入前三，执行快筛分析。",
@@ -126,26 +188,83 @@ class TitanStrategyV2:
 
     def _save_macro_report(self, content):
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        macro_dir = os.path.join(base_path, "docs", "projects", "titan-lite", "reports", "macro")
+
+        # Use user-specific storage root if provided
+        storage_root = getattr(self, 'storage_root', "docs/projects/titan-lite")
+        macro_dir = os.path.join(base_path, storage_root, "reports", "macro")
         os.makedirs(macro_dir, exist_ok=True)
-        date_str = datetime.now().strftime('%Y-%m-%d')
+
+        now = datetime.now()
+        date_str = now.strftime('%Y-%m-%d')
+        file_ts = now.strftime('%Y-%m-%d_%H%M')
+
+        # 1. 保存原子档案 (使用时间戳文件名，防止同日覆盖)
+        # 深度为 reports/macro/FILE.md
+        # 相对 assets 是 ../../assets
+        # 相对 reports 根目录是 ..
+        # 相对 macro 目录是 .
+        macro_content = content.replace("{ASSETS_REL}", "../../assets")
+        macro_content = macro_content.replace("{{REPORTS_REL}}", "..")
+        macro_content = macro_content.replace("{{MACRO_REL}}", ".")
         
-        # 1. 保存原子档案 (使用原生 Pager 逻辑)
-        full_md = f"---\ntitle: 宏观全景 ({date_str})\nprev: {{ text: '历史档案馆', link: './index' }}\nnext: false\n---\n\n# 🌏 宏观全景研判 ({date_str})\n\n{content}"
-        with open(os.path.join(macro_dir, f"{date_str}.md"), "w") as f: f.write(full_md)
+        full_md = f"---\ntitle: 宏观全景 ({file_ts})\nprev: {{ text: '历史档案馆', link: './index' }}\nnext: false\n---\n\n# 🌏 宏观全景研判 ({file_ts})\n\n{macro_content}"
+        with open(os.path.join(macro_dir, f"{file_ts}.md"), "w") as f: f.write(full_md)
+
+        # 2. 最新快照 (始终指向最新的一次结果)
+        # 深度为 reports/market_overview.md
+        # 相对 assets 是 ../assets
+        # 相对 reports 根目录是 .
+        # 相对 macro 目录是 ./macro
+        ov_content_base = content.replace("{ASSETS_REL}", "../assets")
+        ov_content_base = ov_content_base.replace("{{REPORTS_REL}}", ".")
+        ov_content_base = ov_content_base.replace("{{MACRO_REL}}", "./macro")
         
-        # 2. 最新快照 (原生 Pager 指向列表)
-        ov_path = os.path.join(base_path, "docs", "projects", "titan-lite", "reports", "market_overview.md")
+        ov_content = f"---\ntitle: 全球宏观视角\nprev: {{ text: '我的基金中心', link: '/projects/titan-lite/portfolio' }}\nnext: {{ text: '研报历史库', link: './index' }}\n---\n\n# 🌏 最新宏观全景 ({file_ts})\n\n{ov_content_base}\n\n---\n[📜 查看所有历史宏观报告](./macro/index.md)"
+        
+        ov_path = os.path.join(base_path, storage_root, "reports", "market_overview.md")
         with open(ov_path, "w") as f:
-            f.write(f"---\ntitle: 全球宏观视角\nprev: {{ text: '我的基金中心', link: '/projects/titan-lite/portfolio' }}\nnext: {{ text: '研报历史库', link: './index' }}\n---\n\n# 🌏 最新宏观全景 ({date_str})\n\n{content}\n\n---\n[📜 查看所有历史宏观报告](./macro/index.md)")
-        
+            f.write(ov_content)
+            
+        # 同步更新一份到全局回退目录，解决 UI 不刷新的问题
+        global_reports_root = os.path.join(base_path, "docs", "projects", "titan-lite")
+        global_ov_path = os.path.join(global_reports_root, "reports", "market_overview.md")
+        try:
+            with open(global_ov_path, "w") as f:
+                f.write(ov_content)
+            
+            # 同步资源文件，防止 VitePress 构建时找不到图片
+            user_assets_dir = os.path.join(base_path, storage_root, "assets")
+            global_assets_dir = os.path.join(global_reports_root, "assets")
+            if os.path.exists(user_assets_dir):
+                os.makedirs(global_assets_dir, exist_ok=True)
+                for asset_file in os.listdir(user_assets_dir):
+                    if asset_file.endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                        src = os.path.join(user_assets_dir, asset_file)
+                        dst = os.path.join(global_assets_dir, asset_file)
+                        shutil.copy2(src, dst)
+        except Exception as e:
+            sys_logger.error(f"Failed to update global market overview or assets: {e}")
+
         # 3. 重建索引
         self._update_macro_index(macro_dir)
-
     def _update_macro_index(self, macro_dir):
+        # 筛选所有的 md 文件并按时间倒序排列
         files = sorted([f for f in os.listdir(macro_dir) if f.endswith(".md") and f != "index.md"], reverse=True)
         index_path = os.path.join(macro_dir, "index.md")
-        content = f"---\ntitle: 宏观档案馆\nprev: {{ text: '研报历史库', link: '../index' }}\nnext: false\n---\n\n# 📜 历史宏观档案\n\n" + "\n".join([f"- [{f.replace('.md', '')} 研判](./{f})" for f in files])
+        
+        list_items = []
+        for f in files:
+            name = f.replace('.md', '')
+            display = name
+            if '_' in name:
+                parts = name.split('_')
+                date_p = parts[0]
+                time_p = parts[1]
+                # 简单切片实现 HH:MM 格式
+                display = f"{date_p} {time_p[:2]}:{time_p[2:]}"
+            list_items.append(f"- [{display} 研判](./{f})")
+
+        content = f"---\ntitle: 宏观档案馆\nprev: {{ text: '研报历史库', link: '../index' }}\nnext: false\n---\n\n# 📜 历史宏观档案\n\n" + "\n".join(list_items)
         with open(index_path, "w") as f: f.write(content)
 
     def _trigger_final_build(self):
@@ -158,24 +277,36 @@ class TitanStrategyV2:
         except: pass
 
     def save_to_web(self, symbol, item, decision, verify_data, skip_build=False):
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        symbol_dir = os.path.join(base_path, "docs", "projects", "titan-lite", "reports", symbol)
+        symbol_dir = os.path.join(self.archive_mgr.reports_root, symbol)
         os.makedirs(symbol_dir, exist_ok=True)
         now = datetime.now()
         date_str = now.strftime('%Y-%m-%d')
         file_ts = now.strftime('%Y-%m-%d_%H%M')
-        profile = data_provider.get_company_details(symbol)
+        raw_details = data_provider.get_company_details(symbol)
+        profile = {
+            "summary": analytical_engine.translate_business_summary(raw_details.get('summary_en', '')),
+            "full_name": raw_details.get('full_name', symbol)
+        }
         
+        def sanitize_nan(val, fallback=0):
+            import math
+            try:
+                if isinstance(val, float) and math.isnan(val):
+                    return fallback
+            except:
+                pass
+            return val
+
         meta_path = os.path.join(symbol_dir, "metadata.json")
         current_meta = {
             "date": date_str, 
             "file": file_ts, # 记录对应的文件名
-            "price": item['current_price'], 
+            "price": sanitize_nan(item.get('current_price')), 
             "rating": decision.get('action', 'HOLD'), 
-            "pe": item.get('pe', 0), 
-            "roe": item.get('roe', 0), 
-            "fact_score": verify_data.get('fact_score', 0), 
-            "upside": item.get('upside', 0), 
+            "pe": sanitize_nan(item.get('pe', 0)), 
+            "roe": sanitize_nan(item.get('roe', 0)), 
+            "fact_score": sanitize_nan(verify_data.get('fact_score', 0)), 
+            "upside": sanitize_nan(item.get('upside', 0)), 
             "summary_snippet": profile.get('summary', '')[:50] + "..."
         }
         history = []
@@ -191,6 +322,15 @@ class TitanStrategyV2:
         
         # 写入具体日度研报 (使用含时间戳的文件名)
         refined = self._refine_report_with_ai(decision, symbol)
+        
+        # 动态计算组件引用的相对路径前缀
+        # 基础组件位于 docs/projects/titan-lite/
+        # 研报位于 docs/projects/titan-lite/users/NAME/reports/SYMBOL/ (深度 4) 或 docs/projects/titan-lite/reports/SYMBOL/ (深度 2)
+        base_ref = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "projects", "titan-lite"))
+        rel_to_base = os.path.relpath(base_ref, symbol_dir)
+        # 转换 windows 路径分隔符为 posix
+        rel_prefix = rel_to_base.replace('\\', '/') + '/'
+        
         full_md = f"""---
 title: {symbol} 深度研报 ({file_ts})
 prev: {{ text: '{symbol} 看板', link: './index' }}
@@ -198,7 +338,7 @@ next: false
 ---
 
 <script setup>
-import ReportArtifacts from '../../ReportArtifacts.vue'
+import ReportArtifacts from '{rel_prefix}ReportArtifacts.vue'
 </script>
 
 # 📜 {symbol} 研报档案 - {file_ts}
@@ -217,7 +357,7 @@ import ReportArtifacts from '../../ReportArtifacts.vue'
         action = decision.get('action', '').upper()
         if any(kw in action for kw in ["BUY", "SELL", "OVERWEIGHT", "UNDERWEIGHT"]):
             side = "BUY" if any(kw in action for kw in ["BUY", "OVERWEIGHT"]) else "SELL"
-            portfolio_manager.add_pending_order(
+            self.portfolio_mgr.add_pending_order(
                 symbol, side, item.get('current_price'), 
                 rationale=decision.get('rationale', '')[:500]
             )
@@ -306,11 +446,27 @@ import ReportArtifacts from '../../ReportArtifacts.vue'
         if not profile: profile = data_provider.get_company_details(symbol)
         financials = data_provider.get_financial_highlights(symbol)
         
+        # 自动处理 A股后缀补全以获取回测数据
+        fetch_symbol = symbol
+        if symbol.isdigit() and len(symbol) == 6:
+            if symbol.startswith(('60', '68')): fetch_symbol = f"{symbol}.SS"
+            elif symbol.startswith(('00', '30')): fetch_symbol = f"{symbol}.SZ"
+            elif symbol.startswith(('4', '8', '9')): fetch_symbol = f"{symbol}.BJ"
+
         # 1. 运行深度回测并获取波动率
-        bt_data = backtester.run_simple_backtest(symbol)
-        if bt_data:
-            with open(os.path.join(symbol_dir, "backtest.json"), "w") as f:
-                json.dump(bt_data, f, indent=4)
+        bt_data = backtester.run_simple_backtest(fetch_symbol)
+        
+        # 兜底逻辑：如果回测失败，必须写入空 JSON 以免 Vite 编译报错
+        if not bt_data:
+            bt_data = {
+                "symbol": symbol,
+                "metrics": {"volatility": "0%"},
+                "chart_data": [],
+                "summary": "暂无回测数据"
+            }
+        
+        with open(os.path.join(symbol_dir, "backtest.json"), "w") as f:
+            json.dump(bt_data, f, indent=4)
         
         # 2. 计算估值水位与波动等级
         upside = latest.get('upside', 0) or 0
@@ -337,6 +493,11 @@ import ReportArtifacts from '../../ReportArtifacts.vue'
         
         summary = self._get_ai_summary(symbol, decision)
         
+        # 动态计算组件引用的相对路径前缀
+        base_ref = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "projects", "titan-lite"))
+        rel_to_base = os.path.relpath(base_ref, symbol_dir)
+        rel_prefix = rel_to_base.replace('\\', '/') + '/'
+
         # 个股看板使用原生 Pager 指向档案馆
         md = f"""---
 title: {symbol} 总览
@@ -345,9 +506,9 @@ next: false
 ---
 
 <script setup>
-import BacktestChart from '../../BacktestChart.vue'
-import ExternalCockpit from '../../ExternalCockpit.vue'
-import HistoryManager from '../../HistoryManager.vue'
+import BacktestChart from '{rel_prefix}BacktestChart.vue'
+import ExternalCockpit from '{rel_prefix}ExternalCockpit.vue'
+import HistoryManager from '{rel_prefix}HistoryManager.vue'
 import btData from './backtest.json'
 </script>
 
@@ -401,10 +562,16 @@ import btData from './backtest.json'
         except: return "AI 总结生成失败。"
 
     def update_report_index(self, symbol=None, skip_build=False):
-        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        reports_root = os.path.join(base_path, "docs", "projects", "titan-lite", "reports")
+        reports_root = self.archive_mgr.reports_root
         index_path = os.path.join(reports_root, "index.md")
-        symbols = sorted([d for d in os.listdir(reports_root) if os.path.isdir(os.path.join(reports_root, d)) and d != "macro"])
+        os.makedirs(reports_root, exist_ok=True)
+        
+        # 动态计算组件引用的相对路径前缀
+        # ArchiveManager.vue 位于 docs/projects/titan-lite/reports/
+        base_ref = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "projects", "titan-lite", "reports"))
+        rel_to_base = os.path.relpath(base_ref, reports_root)
+        rel_prefix = rel_to_base.replace('\\', '/') + '/'
+        if rel_prefix == './': rel_prefix = ''
 
         # 全局索引使用原生 Pager 指向基金和宏观
         md = f"""---
@@ -414,7 +581,7 @@ next: {{ text: '宏观全景展望', link: './market_overview' }}
 ---
 
 <script setup>
-import ArchiveManager from './ArchiveManager.vue'
+import ArchiveManager from '{rel_prefix}ArchiveManager.vue'
 </script>
 
 # 📑 数字化研报档案馆 (Digital Archive)
@@ -435,19 +602,41 @@ import ArchiveManager from './ArchiveManager.vue'
         msg = f"# 🚀 深度研判: {symbol}\n**决策**: {decision.get('action')}\n**逻辑**: {decision.get('rationale')[:150]}..."
         self.bot.send_markdown(msg, mode="private")
 
-    def analyze_single_ticker(self, symbol):
+    def analyze_single_ticker(self, symbol, user_ctx=None):
         sys_logger.clear()
-        sys_logger.info(f"🚀 开始针对 {symbol} 的深度研判流程", stage="Initializing", progress=5)
+        
+        # Initialize context-aware managers if user_ctx is provided
+        if user_ctx:
+            # For parity, we create new instances of managers with specific storage root
+            from archive_manager import ArchiveManager
+            from portfolio_manager import PortfolioManager
+            self.archive_mgr = ArchiveManager(storage_root=user_ctx.storage_root)
+            self.portfolio_mgr = PortfolioManager(storage_root=user_ctx.storage_root)
+        else:
+            self.archive_mgr = archive_manager
+            self.portfolio_mgr = portfolio_manager
+            
+        sys_logger.info(f"🚀 开始针对 {symbol} 的深度研判流程", stage="Initializing", progress=5, task_type="single")
         try:
+            # 自动处理 A股后缀补全
+            fetch_symbol = symbol
+            is_ashare = False
+            if symbol.isdigit() and len(symbol) == 6:
+                is_ashare = True
+                if symbol.startswith(('60', '68')): fetch_symbol = f"{symbol}.SS"
+                elif symbol.startswith(('00', '30')): fetch_symbol = f"{symbol}.SZ"
+                elif symbol.startswith('8'): fetch_symbol = f"{symbol}.BJ"
+
             # 1. 获取基本数据 (FMP 优先)
-            sys_logger.info(f"🔍 步骤 1/4: 调取 FMP/MCP 数据源进行基本面与行情分析...", stage="Data Fetching", progress=15)
-            curr = data_provider.get_history_price(symbol).iloc[-1]
+            sys_logger.info(f"🔍 步骤 1/4: 调取 FMP/MCP 数据源进行基本面与行情分析...", stage="Data Fetching", progress=15, task_type="single")
+            prices = data_provider.get_history_price(fetch_symbol)
+            curr = prices.iloc[-1] if not prices.empty else 0
             
             # 优先从 FMP 获取机构目标价
-            estimates = fmp_provider.get_analyst_estimates(symbol)
+            estimates = fmp_provider.get_analyst_estimates(fetch_symbol)
             t_price = estimates.get('estimatedPriceAvg', 0)
             
-            y_info = data_provider.get_analyst_info(symbol)
+            y_info = data_provider.get_analyst_info(fetch_symbol)
             if t_price <= 0:
                 t_price = y_info.get('targetMeanPrice', 0)
             
@@ -465,29 +654,36 @@ import ArchiveManager from './ArchiveManager.vue'
                 'sector': y_info.get('sector', 'Unknown')
             }
             
+            ashare_ctx = ""
+            if is_ashare:
+                sys_logger.info(f"🇨🇳 正在提取 A股专用高频指标 (AkShare)...", stage="Data Fetching", progress=20, task_type="single")
+                a_data = data_provider.get_ashare_specifics(symbol)
+                if a_data and "error" not in a_data:
+                    ashare_ctx = f"\n[A股专用审计指标]\n- 市净率(PB): {a_data.get('pb')}\n- 换手率: {a_data.get('turnover_rate')}\n- 主力净流入: {a_data.get('main_inflow')}\n- 总市值: {a_data.get('total_mv')}\n"
+
             # 2. 事实核查与新闻
-            sys_logger.info(f"🛡️ 步骤 2/4: 执行社交媒体舆情核查与异常信号识别...", stage="Verification", progress=35)
-            news = finnhub_provider.get_company_news(symbol)
-            fact_check, fact_score = verification_engine.verify_news(symbol, news)
-            div = verification_engine.check_divergence(symbol)
-            ins = verification_engine.get_insider_signal(symbol)
-            v_ctx = f"\n[事实核查]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价: {div}\n- 高管: {ins}\n"
+            sys_logger.info(f"🛡️ 步骤 2/4: 执行社交媒体舆情核查与异常信号识别...", stage="Verification", progress=35, task_type="single")
+            news = finnhub_provider.get_company_news(fetch_symbol)
+            fact_check, fact_score = verification_engine.verify_news(fetch_symbol, news)
+            div = verification_engine.check_divergence(fetch_symbol)
+            ins = verification_engine.get_insider_signal(fetch_symbol)
+            v_ctx = f"\n[事实核查]\n- 真实度: {fact_score}\n- AI结论: {fact_check}\n- 量价: {div}\n- 高管: {ins}\n" + ashare_ctx
             
             # 3. 深度认知博弈
-            sys_logger.info(f"🧠 步骤 3/4: 启动多 Agent 认知博弈 (Thesis-First 架构)...", stage="Cognitive Debate", progress=50)
-            dec = agent_bridge.analyze_ticker(symbol, context_extra=v_ctx)
+            sys_logger.info(f"🧠 步骤 3/4: 启动多 Agent 认知博弈 (Thesis-First 架构)...", stage="Cognitive Debate", progress=50, task_type="single")
+            dec = agent_bridge.analyze_ticker(fetch_symbol, context_extra=v_ctx)
             
             # 4. 资产化与同步
             if dec:
-                sys_logger.info(f"📤 步骤 4/4: 正在生成可执行资产 (trade.json, wechat_post) 并同步...", stage="Exporting", progress=85)
+                sys_logger.info(f"📤 步骤 4/4: 正在生成可执行资产 (trade.json, wechat_post) 并同步...", stage="Exporting", progress=85, task_type="single")
                 self.save_to_web(symbol, item, dec, {'fact_check': fact_check, 'fact_score': fact_score, 'divergence': div, 'insider': ins})
-                sys_logger.info(f"✅ {symbol} 研判任务圆满完成！建议: {dec.get('action')}", stage="Completed", progress=100)
+                sys_logger.info(f"✅ {symbol} 研判任务圆满完成！建议: {dec.get('action')}", stage="Completed", progress=100, task_type="single")
                 return True
             else:
-                sys_logger.info(f"❌ {symbol} 智能辩论引擎未产出有效结论。")
+                sys_logger.info(f"❌ {symbol} 智能辩论引擎未产出有效结论。", task_type="single")
                 return False
         except Exception as e:
-            sys_logger.info(f"💥 系统性崩溃: {str(e)}")
+            sys_logger.info(f"💥 系统性崩溃: {str(e)}", task_type="single")
             return False
 
     def _fmt_pct(self, v): return f"{v*100:.2%}" if v is not None else "N/A"

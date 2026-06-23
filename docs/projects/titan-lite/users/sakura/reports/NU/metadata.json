@@ -1,0 +1,24 @@
+[
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2343",
+        "price": 12.65,
+        "rating": "Sell",
+        "pe": 19.453848,
+        "roe": 0.30055,
+        "fact_score": 0.8,
+        "upside": 0.434594466403162,
+        "summary_snippet": "Nu Holdings Ltd. \u5728\u5df4\u897f\u3001\u58a8\u897f\u54e5\u3001\u54e5\u4f26\u6bd4\u4e9a\u3001\u5f00\u66fc\u7fa4\u5c9b\u53ca\u7f8e\u56fd\u8fd0\u8425\u6570\u5b57\u94f6\u884c\u5e73\u53f0\u3002\u8be5\u516c\u53f8\u63d0..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_0019",
+        "price": 12.49,
+        "rating": "Underweight",
+        "pe": 19.23077,
+        "roe": 0.30055,
+        "fact_score": 0.4,
+        "upside": 0.45297197758206564,
+        "summary_snippet": "Nu Holdings Ltd. \u5728\u5df4\u897f\u3001\u58a8\u897f\u54e5\u3001\u54e5\u4f26\u6bd4\u4e9a\u3001\u5f00\u66fc\u7fa4\u5c9b\u53ca\u7f8e\u56fd\u8fd0\u8425\u6570\u5b57\u94f6\u884c\u5e73\u53f0\u3002\u8be5\u516c\u53f8\u63d0..."
+    }
+]

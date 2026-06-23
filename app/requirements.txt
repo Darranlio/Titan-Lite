@@ -4,7 +4,6 @@ apscheduler
 yfinance
 pandas
 numpy
-pykalman
 requests
 matplotlib
 seaborn
@@ -20,3 +19,6 @@ python-dotenv
 mcp>=0.1.0
 fastmcp
 nest_asyncio
+PyJWT
+passlib[bcrypt]
+akshare

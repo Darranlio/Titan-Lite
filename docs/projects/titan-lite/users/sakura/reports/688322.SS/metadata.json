@@ -1,0 +1,46 @@
+[
+    {
+        "date": "2026-06-06",
+        "file": "2026-06-06_1344",
+        "price": 126.06,
+        "rating": "Hold",
+        "pe": 370.7647,
+        "roe": 0.04522,
+        "fact_score": 0.5,
+        "upside": 0.049999999999999975,
+        "summary_snippet": "\u5965\u6bd4\u4e2d\u5149\uff08Orbbec Inc.\uff09\u4e3b\u8981\u4ece\u4e8b3D\u89c6\u89c9\u4f20\u611f\u5668\u53ca\u89c6\u89c9\u611f\u77e5\u4ea7\u54c1\u7684\u8bbe\u8ba1\u3001\u5236\u9020\u4e0e\u9500\u552e\u3002\u516c\u53f8\u4ea7\u54c1\u6db5..."
+    },
+    {
+        "date": "2026-06-06",
+        "file": "2026-06-06_1316",
+        "price": 126.06,
+        "rating": "Underweight",
+        "pe": 370.7647,
+        "roe": 0.04522,
+        "fact_score": 0.5,
+        "upside": 0.049999999999999975,
+        "summary_snippet": "\u5965\u6bd4\u4e2d\u5149\uff08Orbbec Inc.\uff09\u4e3b\u8981\u4ece\u4e8b3D\u89c6\u89c9\u4f20\u611f\u5668\u53ca\u89c6\u89c9\u611f\u77e5\u4ea7\u54c1\u7684\u8bbe\u8ba1\u3001\u5236\u9020\u4e0e\u9500\u552e\u3002\u516c\u53f8\u4ea7\u54c1\u6db5..."
+    },
+    {
+        "date": "2026-06-06",
+        "file": "2026-06-06_1157",
+        "price": 126.06,
+        "rating": "Underweight",
+        "pe": 370.7647,
+        "roe": 0.04522,
+        "fact_score": 0.5,
+        "upside": 0.049999999999999975,
+        "summary_snippet": "\u5965\u6bd4\u4e2d\u5149\uff08Orbbec Inc.\uff09\u4e3b\u8981\u4ece\u4e8b\u4e09\u7ef4\u89c6\u89c9\u4f20\u611f\u5668\u53ca\u89c6\u89c9\u611f\u77e5\u4ea7\u54c1\u7684\u8bbe\u8ba1\u3001\u5236\u9020\u4e0e\u9500\u552e\u3002\u516c\u53f8\u4ea7\u54c1\u6db5..."
+    },
+    {
+        "date": "2026-06-06",
+        "file": "2026-06-06_0158",
+        "price": null,
+        "rating": "Hold",
+        "pe": 370.7647,
+        "roe": 0.04522,
+        "fact_score": 0.5,
+        "upside": null,
+        "summary_snippet": "\u5965\u6bd4\u4e2d\u5149\uff08Orbbec Inc.\uff09\u4e3b\u8981\u4ece\u4e8b3D\u89c6\u89c9\u4f20\u611f\u5668\u53ca\u89c6\u89c9\u611f\u77e5\u4ea7\u54c1\u7684\u8bbe\u8ba1\u3001\u5236\u9020\u4e0e\u9500\u552e\u3002\u516c\u53f8\u4ea7\u54c1\u6db5..."
+    }
+]

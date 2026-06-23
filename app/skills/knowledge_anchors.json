@@ -1,0 +1,20 @@
+{
+  "seasonality": {
+    "Q1": {
+      "bull": ["Spring Festival Consumption", "Small Caps", "Finance"],
+      "bear": ["Real Estate", "Heavy Industry"]
+    },
+    "Q2": {
+      "bull": ["Tech (Earnings)", "Tourism"],
+      "bear": ["Coal", "Infrastructure"]
+    },
+    "Q3": {
+      "bull": ["Utilities (Heatwave)", "Tech (Back to School)", "Semiconductors"],
+      "bear": ["Construction (Rainy Season)", "Traditional Retail"]
+    },
+    "Q4": {
+      "bull": ["Retail (Double 11/Christmas)", "Energy (Heating)", "Logistics"],
+      "bear": ["Automotive (End of Year)"]
+    }
+  }
+}

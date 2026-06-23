@@ -1,0 +1,46 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2241",
+        "price": 20.9,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2356",
+        "price": 19.12,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0101",
+        "price": 18.0,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0052",
+        "price": 18.0,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    }
+]

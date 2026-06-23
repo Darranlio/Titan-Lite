@@ -1,0 +1,46 @@
+[
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1750",
+        "price": 453.2,
+        "rating": "Overweight",
+        "pe": 16.20887,
+        "roe": 0.20515,
+        "fact_score": 0.5,
+        "upside": 0.5615265666372463,
+        "summary_snippet": "\u817e\u8baf\u63a7\u80a1\u6709\u9650\u516c\u53f8\u662f\u4e00\u5bb6\u6295\u8d44\u63a7\u80a1\u516c\u53f8\uff0c\u4e3b\u8981\u5728\u4e2d\u56fd\u5185\u5730\u53ca\u56fd\u9645\u5e02\u573a\u63d0\u4f9b\u589e\u503c\u670d\u52a1\u3001\u8425\u9500\u670d\u52a1\u3001\u91d1\u878d\u79d1\u6280\u53ca\u4f01\u4e1a\u670d..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1715",
+        "price": 453.2,
+        "rating": "Overweight",
+        "pe": 16.20887,
+        "roe": 0.20515,
+        "fact_score": 0.5,
+        "upside": 0.5615265666372463,
+        "summary_snippet": "\u817e\u8baf\u63a7\u80a1\u6709\u9650\u516c\u53f8\u662f\u4e00\u5bb6\u6295\u8d44\u63a7\u80a1\u516c\u53f8\uff0c\u4e3b\u8981\u5728\u4e2d\u56fd\u5185\u5730\u53ca\u56fd\u9645\u5e02\u573a\u63d0\u4f9b\u589e\u503c\u670d\u52a1\u3001\u8425\u9500\u670d\u52a1\u3001\u91d1\u878d\u79d1\u6280\u53ca\u4f01\u4e1a\u670d..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1518",
+        "price": 453.2,
+        "rating": "Overweight",
+        "pe": 16.20887,
+        "roe": 0.20515,
+        "fact_score": 0.5,
+        "upside": 0.5615265666372463,
+        "summary_snippet": "\u817e\u8baf\u63a7\u80a1\u6709\u9650\u516c\u53f8\u662f\u4e00\u5bb6\u6295\u8d44\u63a7\u80a1\u516c\u53f8\uff0c\u5728\u4e2d\u56fd\u5185\u5730\u53ca\u56fd\u9645\u5e02\u573a\u63d0\u4f9b\u589e\u503c\u670d\u52a1\u3001\u8425\u9500\u670d\u52a1\u3001\u91d1\u878d\u79d1\u6280\u53ca\u4f01\u4e1a\u670d\u52a1\u3002..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1443",
+        "price": 453.2,
+        "rating": "Underweight",
+        "pe": 16.20887,
+        "roe": 0.20515,
+        "fact_score": 0.5,
+        "upside": 0.5615265666372463,
+        "summary_snippet": "\u817e\u8baf\u63a7\u80a1\u6709\u9650\u516c\u53f8\u662f\u4e00\u5bb6\u6295\u8d44\u63a7\u80a1\u516c\u53f8\uff0c\u4e3b\u8981\u5728\u4e2d\u56fd\u5185\u5730\u53ca\u56fd\u9645\u5e02\u573a\u63d0\u4f9b\u589e\u503c\u670d\u52a1\u3001\u8425\u9500\u670d\u52a1\u3001\u91d1\u878d\u79d1\u6280\u53ca\u4f01\u4e1a\u670d..."
+    }
+]

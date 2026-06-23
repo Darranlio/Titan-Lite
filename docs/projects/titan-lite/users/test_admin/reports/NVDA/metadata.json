@@ -1,0 +1,46 @@
+[
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1744",
+        "price": 205.1,
+        "rating": "Hold",
+        "pe": 31.457056,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.45501579717211127,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u8fd0\u8425\u57fa\u7840\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1710",
+        "price": 205.1,
+        "rating": "Underweight",
+        "pe": 31.457056,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.45501579717211127,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1513",
+        "price": 205.1,
+        "rating": "Overweight",
+        "pe": 31.457056,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.45501579717211127,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1444",
+        "price": 205.1,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    }
+]

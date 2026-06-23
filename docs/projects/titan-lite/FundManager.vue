@@ -283,15 +283,22 @@ const API_BASE = typeof window !== 'undefined'
   ? `${window.location.protocol}//${window.location.hostname}:8000` 
   : 'http://localhost:8000'
 
+const authFetch = (url, options = {}) => {
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('titan_token') : null;
+  const headers = { ...options.headers };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { ...options, headers });
+};
+
 const fetchAll = async () => {
   try {
-    const sResp = await fetch(`${API_BASE}/portfolio/status`); 
+    const sResp = await authFetch(`${API_BASE}/portfolio/status`); 
     if (sResp.ok) status.value = await sResp.json();
-    const aResp = await fetch(`${API_BASE}/portfolio/analysis`); 
+    const aResp = await authFetch(`${API_BASE}/portfolio/analysis`); 
     if (aResp.ok) analysis.value = await aResp.json();
-    const hResp = await fetch(`${API_BASE}/portfolio/history`); 
+    const hResp = await authFetch(`${API_BASE}/portfolio/history`); 
     if (hResp.ok) tradeHistory.value = await hResp.json();
-    const pResp = await fetch(`${API_BASE}/portfolio/pending`); 
+    const pResp = await authFetch(`${API_BASE}/portfolio/pending`); 
     if (pResp.ok) pendingOrders.value = await pResp.json();
   } catch (e) { console.error("Sync failed", e) }
 }
@@ -322,7 +329,7 @@ const handleTrade = async () => {
   loading.value = true
   try {
     const url = `${API_BASE}/portfolio/trade?symbol=${tradeForm.value.symbol.toUpperCase()}&side=${tradeForm.value.side}&quantity=${tradeForm.value.quantity}&price=${tradeForm.value.price}&date=${tradeForm.value.date}`
-    const res = await (await fetch(url, { method: 'POST' })).json()
+    const res = await (await authFetch(url, { method: 'POST' })).json()
     alert(res.msg); await fetchAll(); viewMode.value = 'list'; activeTab.value = 'history';
   } catch (e) { alert("记录失败") } finally { loading.value = false }
 }
@@ -330,7 +337,7 @@ const handleTrade = async () => {
 const deleteTrade = async (id) => {
   if (!confirm("确定撤销记录并重新核算吗？")) return
   try {
-    const res = await (await fetch(`${API_BASE}/portfolio/trade/${id}`, { method: 'DELETE' })).json()
+    const res = await (await authFetch(`${API_BASE}/portfolio/trade/${id}`, { method: 'DELETE' })).json()
     alert(res.msg); await fetchAll()
   } catch (e) { alert("撤销失败") }
 }
@@ -338,7 +345,7 @@ const deleteTrade = async (id) => {
 const executeOrder = async (id) => {
   if (!confirm("确定将此建议转换为正式交易记录吗？（将按建议价格扣减资金）")) return
   try {
-    const res = await (await fetch(`${API_BASE}/portfolio/pending/execute/${id}`, { method: 'POST' })).json()
+    const res = await (await authFetch(`${API_BASE}/portfolio/pending/execute/${id}`, { method: 'POST' })).json()
     alert(res.msg); await fetchAll(); activeTab.value = 'history';
   } catch (e) { alert("执行失败") }
 }
@@ -346,14 +353,14 @@ const executeOrder = async (id) => {
 const clearOrder = async (id) => {
   if (!confirm("确定忽略此建议吗？")) return
   try {
-    const res = await (await fetch(`${API_BASE}/portfolio/pending/${id}`, { method: 'DELETE' })).json()
+    const res = await (await authFetch(`${API_BASE}/portfolio/pending/${id}`, { method: 'DELETE' })).json()
     await fetchAll()
   } catch (e) { alert("清除失败") }
 }
 
 const fetchDiagnosis = async () => {
   diagLoading.value = true
-  try { diagnosis.value = (await (await fetch(`${API_BASE}/portfolio/diagnosis`)).json()).report }
+  try { diagnosis.value = (await (await authFetch(`${API_BASE}/portfolio/diagnosis`)).json()).report }
   finally { diagLoading.value = false }
 }
 

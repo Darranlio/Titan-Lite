@@ -45,14 +45,16 @@ const currentStage = ref('Idle')
 const progress = ref(0)
 let timer = null
 
-// 动态检测 API 地址
 const API_BASE = typeof window !== 'undefined' 
   ? `${window.location.protocol}//${window.location.hostname}:8000` 
   : 'http://localhost:8000'
 
 const fetchLogs = async () => {
   try {
-    const res = await fetch(`${API_BASE}/logs`)
+    const token = localStorage.getItem('titan_token')
+    const res = await fetch(`${API_BASE}/logs`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     const data = await res.json()
     logs.value = data.logs
     currentStage.value = data.stage
@@ -86,7 +88,15 @@ const runBatchAnalysis = async () => {
   batchStatus.value = '正在启动全市场深度扫描...'
   startPolling()
   try {
-    await fetch(`${API_BASE}/run`, { method: 'POST' })
+    const token = localStorage.getItem('titan_token')
+    await fetch(`${API_BASE}/run`, { 
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ market: 'Global', mode: 'solo' })
+    })
     batchStatus.value = '✅ 批量扫描已触发！'
   } catch (error) {
     batchStatus.value = '❌ 启动失败'
@@ -108,7 +118,11 @@ const runSingleAnalysis = async () => {
   singleStatus.value = `正在针对 ${ticker.value} 进行研判...`
   startPolling()
   try {
-    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}`, { method: 'POST' })
+    const token = localStorage.getItem('titan_token')
+    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}`, { 
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     const data = await response.json()
     if (data.status === 'started') {
       singleStatus.value = `研判中: ${ticker.value.toUpperCase()}`
@@ -121,7 +135,11 @@ const runSingleAnalysis = async () => {
 
 const stopAnalysis = async () => {
   try {
-    await fetch(`${API_BASE}/stop`, { method: 'POST' })
+    const token = localStorage.getItem('titan_token')
+    await fetch(`${API_BASE}/stop`, { 
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
     singleStatus.value = '🛑 已手动终止'
     batchStatus.value = ''
     loadingSingle.value = false
