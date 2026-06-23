@@ -8,9 +8,9 @@ Titan-Lite 是一款基于大模型认知博弈与量化算法的个人投资决
 ## 📸 界面展示 (Screenshots)
 
 <p align="center">
-  <img src="./pics/webUI.png" width="32%" alt="Control Panel" />
-  <img src="./pics/Titan-PM.png" width="32%" alt="Portfolio Management" />
-  <img src="./pics/Digital_archive.png" width="32%" alt="Digital Archive" />
+  <img src="./pics/webUI.png" height="260" alt="Control Panel" />
+  <img src="./pics/Titan-PM.png" height="260" alt="Portfolio Management" />
+  <img src="./pics/Digital_archive.png" height="260" alt="Digital Archive" />
 </p>
 
 ---
