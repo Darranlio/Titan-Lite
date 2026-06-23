@@ -5,6 +5,19 @@ Titan-Lite 是一款基于大模型认知博弈与量化算法的个人投资决
 
 ---
 
+## 📸 界面展示 (Screenshots)
+
+### 沉浸式操作面板 (Control Panel)
+![Control Panel](./pics/webUI.png)
+
+### 个人基金管理 (Portfolio Management)
+![Portfolio Management](./pics/Titan-PM.png)
+
+### 智能研报档案馆 (Digital Archive)
+![Digital Archive](./pics/Digital_archive.png)
+
+---
+
 ## 🌟 核心特性 (Features)
 
 1. **三维分析模式 (Analysis Modes)**：
