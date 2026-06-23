@@ -80,17 +80,29 @@ class SystemLogger:
             with open(self.state_file, "w") as f:
                 json.dump(state_data, f)
 
-    def warning(self, msg, stage=None, progress=None):
+    def warning(self, msg, stage=None, progress=None, task_type=None):
+        if task_type is None:
+            task_type = self.default_task_type
+        target_log = self.log_file
+        if task_type == "batch": target_log = self.log_batch_file
+        elif task_type == "single": target_log = self.log_single_file
+            
         ts = datetime.now().strftime("%H:%M:%S")
         line = f"[{ts}] ⚠️ {msg}\n"
-        with open(self.log_file, "a", encoding="utf-8") as f:
+        with open(target_log, "a", encoding="utf-8") as f:
             f.write(line)
         print(line.strip())
 
-    def error(self, msg, stage=None, progress=None):
+    def error(self, msg, stage=None, progress=None, task_type=None):
+        if task_type is None:
+            task_type = self.default_task_type
+        target_log = self.log_file
+        if task_type == "batch": target_log = self.log_batch_file
+        elif task_type == "single": target_log = self.log_single_file
+            
         ts = datetime.now().strftime("%H:%M:%S")
         line = f"[{ts}] ❌ {msg}\n"
-        with open(self.log_file, "a", encoding="utf-8") as f:
+        with open(target_log, "a", encoding="utf-8") as f:
             f.write(line)
         print(line.strip())
 
