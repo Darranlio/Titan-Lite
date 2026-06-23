@@ -13,9 +13,9 @@
         </div>
         <div class="text-area">
           <h1 class="main-title">Digital Asset Lab</h1>
-          <p class="tagline">Professional Quant & AI Solutions</p>
+          <p class="tagline">Apex AI & Quant Execution Terminal</p>
           <div class="desc-box">
-            <p>基于 DeepSeek 认知博弈架构的个人投资决策终端。</p>
+            <p>您的私人华尔街团队。融合顶尖 AI 算力与机构级量化模型，全天候无情捕捉市场暴利信号，助您实现交易维度的降维打击。</p>
           </div>
           <div class="hero-actions">
             <a href="/projects/titan-lite/portfolio" class="btn-primary">进入基金中心</a>
@@ -35,8 +35,8 @@
           </div>
           <div class="author-info">
             <span class="name">Darranlio</span>
-            <span class="role">算法工程师</span>
-            <div class="bio-short">美团 UAV · 量化探索者</div>
+            <span class="role">美团无人机</span>
+            <div class="bio-short">算法工程师</div>
             <div class="mini-links">
               <button @click="copyEmail" :class="{ 'active': emailCopied }">
                 {{ emailCopied ? '1059390428@qq.com' : '📧 Email' }}
