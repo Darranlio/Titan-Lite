@@ -111,5 +111,16 @@ npm run docs:dev
 
 ---
 
+## 🙏 致谢 (Acknowledgments)
+
+本项目的诞生离不开开源社区的伟大贡献，部分核心逻辑与实现思路借鉴了以下优秀的开源项目：
+- [FinceptTerminal](https://github.com/Fincept-Corporation/FinceptTerminal.git)：为本项目的控制面板 UI 交互与金融终端概念提供了宝贵的灵感。
+- [TradingAgents](https://github.com/TauricResearch/TradingAgents.git)：本项目多智能体（Multi-Agent）认知博弈架构与角色设定的重要参考来源。
+- [a-stock-data](https://github.com/simonlin1212/a-stock-data.git)：为 A 股市场的底层数据抓取与解析逻辑提供了扎实的参考实现。
+
+特此向以上项目的原作者及开源贡献者致以最诚挚的感谢！
+
+---
+
 > **免责声明 (Disclaimer)**  
 > 本项目代码与策略逻辑仅作为个人研究与学习 AI / 量化交易的探索工具。程序生成的任何研报、打分、以及操作建议**均不构成实际的投资建议**。入市有风险，盈亏自负，投资需谨慎。
