@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const batchStatus = ref('')
 const singleStatus = ref('')
 const ticker = ref('')
+const analysisMode = ref('solo')
 const loadingBatch = ref(false)
 const loadingSingle = ref(false)
 
@@ -43,6 +44,7 @@ const selectTicker = (s) => {
 const logs = ref([])
 const currentStage = ref('Idle')
 const progress = ref(0)
+const currentTaskType = ref('none')
 let timer = null
 
 const API_BASE = typeof window !== 'undefined' 
@@ -52,7 +54,7 @@ const API_BASE = typeof window !== 'undefined'
 const fetchLogs = async () => {
   try {
     const token = localStorage.getItem('titan_token')
-    const res = await fetch(`${API_BASE}/logs`, {
+    const res = await fetch(`${API_BASE}/logs?type=${currentTaskType.value}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
@@ -86,6 +88,7 @@ const stopPolling = () => {
 const runBatchAnalysis = async () => {
   loadingBatch.value = true
   batchStatus.value = '正在启动全市场深度扫描...'
+  currentTaskType.value = 'batch'
   startPolling()
   try {
     const token = localStorage.getItem('titan_token')
@@ -116,10 +119,11 @@ const runSingleAnalysis = async () => {
   
   loadingSingle.value = true
   singleStatus.value = `正在针对 ${ticker.value} 进行研判...`
+  currentTaskType.value = 'single'
   startPolling()
   try {
     const token = localStorage.getItem('titan_token')
-    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}`, { 
+    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}?mode=${analysisMode.value}`, { 
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -183,10 +187,25 @@ onUnmounted(() => {
       <div class="icon">🎯</div>
       <h3>个股专项研判</h3>
       <p>直接对指定标的启动 Titan-Alpha 引擎。</p>
+      <div class="mode-segmented-control">
+        <label class="mode-btn" :class="{ active: analysisMode === 'solo' }">
+          <input type="radio" v-model="analysisMode" value="solo" :disabled="loadingSingle" />
+          <span class="m-icon">👤</span> 专家单挑
+        </label>
+        <label class="mode-btn" :class="{ active: analysisMode === 'debate' }">
+          <input type="radio" v-model="analysisMode" value="debate" :disabled="loadingSingle" />
+          <span class="m-icon">⚔️</span> 多体辩论
+        </label>
+        <label class="mode-btn" :class="{ active: analysisMode === 'quant' }">
+          <input type="radio" v-model="analysisMode" value="quant" :disabled="loadingSingle" />
+          <span class="m-icon">📉</span> 纯粹量化
+        </label>
+      </div>
+      
       <div class="input-group search-container">
         <input 
           v-model="ticker" 
-          placeholder="代码或公司名 (如 NVDA)" 
+          placeholder="输入代码或公司名 (如 NVDA)" 
           @input="handleSearch"
           @keyup.enter="runSingleAnalysis" 
           @focus="handleSearch"
@@ -328,6 +347,45 @@ p { font-size: 0.85rem; color: var(--vp-c-text-2); margin-bottom: 1.2rem; }
 
 .input-group { display: flex; gap: 0.5rem; }
 .search-container { position: relative; }
+
+.mode-segmented-control {
+  display: flex;
+  background-color: var(--vp-c-bg-mute);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  gap: 4px;
+}
+.mode-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  user-select: none;
+}
+.mode-btn input[type="radio"] { display: none; }
+.mode-btn:hover:not(.active) {
+  background-color: var(--vp-c-bg-alt);
+  color: var(--vp-c-text-1);
+}
+.mode-btn.active {
+  background-color: var(--vp-c-brand);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 163, 255, 0.3);
+  transform: translateY(-1px);
+}
+.m-icon { font-size: 1rem; }
+
 input { 
   flex: 1; 
   padding: 0.6rem 1rem; 
