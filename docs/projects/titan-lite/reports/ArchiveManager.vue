@@ -11,7 +11,7 @@
     </div>
 
     <div class="table-wrapper">
-      <table class="archive-table">
+      <table class="archive-table" v-if="filteredReports.length > 0">
         <thead>
           <tr>
             <th @click="sortBy('date')" class="sortable col-time">研判时间</th>
@@ -26,40 +26,64 @@
           <tr v-for="r in filteredReports" :key="r.symbol">
             <td class="small-text">{{ formatShortTime(r.file || r.date) }}</td>
             <td>
-              <a :href="`./${r.symbol}/index`" class="symbol-link"><strong>{{ r.symbol }}</strong></a>
+              <a :href="getReportLink(r.symbol)" class="symbol-link"><strong>{{ r.symbol }}</strong></a>
             </td>
             <td><span class="rating-tag" :class="r.rating.toLowerCase().replace(' ', '-')">{{ r.rating }}</span></td>
             <td class="tabular">${{ r.price }}</td>
             <td class="tabular" :class="r.upside > 0 ? 'up' : 'down'">{{ (r.upside * 100).toFixed(1) }}%</td>
             <td class="actions-cell">
               <div class="action-btns">
-                <a :href="`./${r.symbol}/index`" class="view-btn">进入看板</a>
+                <a :href="getReportLink(r.symbol)" class="view-btn">进入看板</a>
                 <button @click="deleteSymbol(r.symbol)" class="delete-btn">删除标的</button>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
+      <div v-else class="empty-state">
+        <p v-if="!hasToken">📡 数字化档案馆已就绪，请点击右上角登录研究员账号以同步您的专属研报档案。</p>
+        <p v-else>暂无研报数据。启动个股研判后，档案将自动同步至此。</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { showToast, showConfirm } from '../hooks/useUI.js'
 
 const reports = ref([])
 const searchQuery = ref('')
 const sortKey = ref('date')
 const sortOrder = ref(-1)
+const hasToken = ref(false)
 
 const API_BASE = typeof window !== 'undefined' 
   ? `${window.location.protocol}//${window.location.hostname}:8000` 
   : 'http://localhost:8000'
 
 const fetchArchive = async () => {
+  const savedToken = localStorage.getItem('titan_token')
+  hasToken.value = !!savedToken
+  if (!savedToken) {
+    reports.value = []
+    return
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/archive/list`)
-    reports.value = await res.json()
+    const headers = { 'Authorization': `Bearer ${savedToken}` }
+    const res = await fetch(`${API_BASE}/archive/list`, { headers })
+    if (res.status === 401) {
+      localStorage.removeItem('titan_token')
+      localStorage.removeItem('titan_user')
+      window.location.reload()
+      return
+    }
+    if (res.ok) {
+      reports.value = await res.json()
+    } else {
+      reports.value = []
+    }
   } catch (e) { console.error("Archive fetch failed", e) }
 }
 
@@ -106,12 +130,15 @@ const sortBy = (key) => {
 }
 
 const deleteSymbol = async (symbol) => {
-  if (!confirm(`确定要彻底删除 ${symbol} 的所有档案和看板吗？`)) return
+  const confirmed = await showConfirm(`确定要彻底删除 ${symbol} 的所有档案和看板吗？`)
+  if (!confirmed) return
   try {
-    const res = await (await fetch(`${API_BASE}/archive/${symbol}`, { method: 'DELETE' })).json()
-    alert(res.msg)
+    const savedToken = localStorage.getItem('titan_token')
+    const headers = savedToken ? { 'Authorization': `Bearer ${savedToken}` } : {}
+    const res = await (await fetch(`${API_BASE}/archive/${symbol}`, { method: 'DELETE', headers })).json()
+    showToast(res.msg)
     await fetchArchive()
-  } catch (e) { alert("删除失败") }
+  } catch (e) { showToast("删除失败", "error") }
 }
 
 const formatShortTime = (ts) => {
@@ -120,6 +147,13 @@ const formatShortTime = (ts) => {
   const parts = ts.split('_')
   const time = parts[1] ? parts[1].replace(/(\d{2})(\d{2})/, '$1:$2') : ''
   return `${parts[0]} ${time}`
+}
+
+const getReportLink = (symbol) => {
+  const userStr = localStorage.getItem('titan_user')
+  const user = userStr ? JSON.parse(userStr) : null
+  const username = user ? user.username : 'default'
+  return `/projects/titan-lite/users/${username}/reports/${symbol}/index`
 }
 </script>
 

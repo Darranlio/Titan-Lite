@@ -1,0 +1,35 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2239",
+        "price": 98.95,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 15.5337515,
+        "roe": 0.092159994,
+        "fact_score": 0.5,
+        "upside": 0.8479334007074281,
+        "summary_snippet": "Alibaba Group Holding Limited, through its subsidi..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2359",
+        "price": 107.0,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u963f\u91cc\u5df4\u5df4\u96c6\u56e2\u63a7\u80a1\u6709\u9650\u516c\u53f8\uff08Alibaba Group Holding Limited\uff09\u901a\u8fc7\u5176\u5b50\u516c\u53f8\uff0c..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0053",
+        "price": 110.2,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Alibaba Group Holding Limited, through its subsidi..."
+    }
+]

@@ -1,79 +1,64 @@
 {
-  "hash": "a32fc6e2",
-  "configHash": "cf437c89",
+  "hash": "844b0a9b",
+  "configHash": "7734f347",
   "lockfileHash": "afe5494f",
-  "browserHash": "d9ced0b9",
+  "browserHash": "f8611dab",
   "optimized": {
     "vue": {
       "src": "../../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "901f708c",
+      "fileHash": "34c047e2",
       "needsInterop": false
     },
     "vitepress > @vue/devtools-api": {
       "src": "../../../node_modules/@vue/devtools-api/dist/index.js",
       "file": "vitepress___@vue_devtools-api.js",
-      "fileHash": "dc7909f4",
+      "fileHash": "984a52bd",
       "needsInterop": false
     },
     "vitepress > @vueuse/core": {
       "src": "../../../node_modules/@vueuse/core/index.mjs",
       "file": "vitepress___@vueuse_core.js",
-      "fileHash": "1a4ae296",
+      "fileHash": "feb74cda",
       "needsInterop": false
     },
     "@braintree/sanitize-url": {
       "src": "../../../node_modules/@braintree/sanitize-url/dist/index.js",
       "file": "@braintree_sanitize-url.js",
-      "fileHash": "081c7132",
+      "fileHash": "b4cd880b",
       "needsInterop": true
     },
     "dayjs": {
       "src": "../../../node_modules/dayjs/dayjs.min.js",
       "file": "dayjs.js",
-      "fileHash": "d125dec8",
+      "fileHash": "b85b26c4",
       "needsInterop": true
     },
     "debug": {
       "src": "../../../node_modules/debug/src/browser.js",
       "file": "debug.js",
-      "fileHash": "a2aa31ad",
+      "fileHash": "c37af5f0",
       "needsInterop": true
     },
     "cytoscape-cose-bilkent": {
       "src": "../../../node_modules/cytoscape-cose-bilkent/cytoscape-cose-bilkent.js",
       "file": "cytoscape-cose-bilkent.js",
-      "fileHash": "44936316",
+      "fileHash": "428d706e",
       "needsInterop": true
     },
     "cytoscape": {
       "src": "../../../node_modules/cytoscape/dist/cytoscape.esm.mjs",
       "file": "cytoscape.js",
-      "fileHash": "8375a0a6",
-      "needsInterop": false
-    },
-    "@theme/index": {
-      "src": "../../../node_modules/vitepress/dist/client/theme-default/index.js",
-      "file": "@theme_index.js",
-      "fileHash": "a0968284",
-      "needsInterop": false
-    },
-    "marked": {
-      "src": "../../../node_modules/marked/lib/marked.esm.js",
-      "file": "marked.js",
-      "fileHash": "acb33803",
+      "fileHash": "63257ac6",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-L7EAXGFR": {
-      "file": "chunk-L7EAXGFR.js"
-    },
     "chunk-ALQ527PF": {
       "file": "chunk-ALQ527PF.js"
     },
-    "chunk-JVWSFFO4": {
-      "file": "chunk-JVWSFFO4.js"
+    "chunk-BUSYA2B4": {
+      "file": "chunk-BUSYA2B4.js"
     }
   }
 }

@@ -135,9 +135,7 @@ export default withMermaid(defineConfig({
     },
 
     // 社交链接
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/Darranlio' }
-    ],
+    socialLinks: [],
     
     // 页脚
     footer: {

@@ -1,0 +1,79 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2240",
+        "price": 568.74,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Meta Platforms, Inc. engages in the development of..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2353",
+        "price": 597.05,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Meta Platforms, Inc. \u81f4\u529b\u4e8e\u5f00\u53d1\u5404\u7c7b\u4ea7\u54c1\uff0c\u4f7f\u7528\u6237\u80fd\u591f\u901a\u8fc7\u79fb\u52a8\u8bbe\u5907\u3001\u4e2a\u4eba\u7535\u8111\u3001\u865a\u62df..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0101",
+        "price": 566.98,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Meta Platforms, Inc. engages in the development of..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0046",
+        "price": 566.98,
+        "rating": "Hold",
+        "pe": 20.617455,
+        "roe": 0.32930002,
+        "fact_score": 0.8,
+        "upside": 0.4591666372711559,
+        "summary_snippet": "Meta Platforms, Inc. \u81f4\u529b\u4e8e\u5f00\u53d1\u5404\u7c7b\u4ea7\u54c1\uff0c\u4f7f\u7528\u6237\u80fd\u591f\u901a\u8fc7\u79fb\u52a8\u8bbe\u5907\u3001\u4e2a\u4eba\u7535\u8111\u3001\u865a\u62df..."
+    },
+    {
+        "date": "2026-06-14",
+        "file": "2026-06-14_0121",
+        "price": 566.98,
+        "rating": "Hold",
+        "pe": 20.617455,
+        "roe": 0.32930002,
+        "fact_score": 0.8,
+        "upside": 0.4591666372711559,
+        "summary_snippet": "Meta Platforms, Inc. \u81f4\u529b\u4e8e\u5f00\u53d1\u4f7f\u4eba\u4eec\u80fd\u591f\u901a\u8fc7\u79fb\u52a8\u8bbe\u5907\u3001\u4e2a\u4eba\u7535\u8111\u3001\u865a\u62df\u73b0\u5b9e\uff08VR..."
+    },
+    {
+        "date": "2026-06-13",
+        "file": "2026-06-13_2348",
+        "price": 566.98,
+        "rating": "Underweight",
+        "pe": 20.617455,
+        "roe": 0.32930002,
+        "fact_score": 0.4,
+        "upside": 0.4591666372711559,
+        "summary_snippet": "Meta Platforms, Inc. \u81f4\u529b\u4e8e\u5f00\u53d1\u5404\u7c7b\u4ea7\u54c1\uff0c\u4f7f\u7528\u6237\u80fd\u591f\u901a\u8fc7\u79fb\u52a8\u8bbe\u5907\u3001\u4e2a\u4eba\u7535\u8111\u3001\u865a\u62df..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1315",
+        "price": 593.0,
+        "rating": "Hold",
+        "pe": 21.547964,
+        "roe": 0.32930002,
+        "fact_score": 0.4,
+        "upside": 0.39763575042158517,
+        "summary_snippet": "Meta Platforms, Inc. \u81f4\u529b\u4e8e\u5f00\u53d1\u4f7f\u4eba\u4eec\u80fd\u591f\u901a\u8fc7\u79fb\u52a8\u8bbe\u5907\u3001\u4e2a\u4eba\u7535\u8111\u3001\u865a\u62df\u73b0\u5b9e\uff08VR..."
+    }
+]

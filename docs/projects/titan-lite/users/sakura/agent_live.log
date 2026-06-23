@@ -1,0 +1,2 @@
+[22:42:38] ❌ Heatmap generation failed: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+[22:42:57] ❌ Macro analysis generation failed: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****ummy is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}

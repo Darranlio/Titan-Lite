@@ -26,12 +26,40 @@ class NewsSpider:
             
             tickers = []
             for row in table.find_all('tr')[1:20]: # 取前20个
-                symbol = row.find('td').text.strip()
-                tickers.append(symbol)
+                tds = row.find_all('td')
+                if tds:
+                    symbol = tds[0].text.strip()
+                    tickers.append(symbol)
             return tickers
         except Exception as e:
             print(f"爬取热点标的失败: {e}")
-            return ["AAPL", "NVDA", "TSLA", "MSFT", "BABA", "0700.HK"]
+            return []
+
+    def get_us_most_active(self):
+        """
+        从 Yahoo Finance 获取成交最活跃的美股 (Most Active)
+        """
+        url = "https://finance.yahoo.com/markets/stocks/most-active"
+        try:
+            resp = requests.get(url, headers=self.headers, timeout=10)
+            soup = BeautifulSoup(resp.text, 'lxml')
+            # yfinance 页面结构可能变化，尝试匹配 <td> 中的代码
+            # 通常在 data-symbol 属性中
+            import re
+            symbols = []
+            for td in soup.find_all('td', {'data-field': 'symbol'}):
+                sym = td.text.strip()
+                if sym: symbols.append(sym)
+            
+            if not symbols:
+                # 兜底方案：查找所有链接中看起来像代码的部分
+                links = soup.find_all('a', href=re.compile(r'/quote/([A-Z]+)'))
+                symbols = [re.search(r'/quote/([A-Z]+)', a['href']).group(1) for a in links]
+            
+            return list(set(symbols))[:30]
+        except Exception as e:
+            print(f"爬取活跃美股失败: {e}")
+            return []
 
     def get_market_sentiment_keywords(self):
         """

@@ -1,0 +1,46 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2240",
+        "price": 22.62,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Xiaomi Corporation, an investment holding company,..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2356",
+        "price": 25.66,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u5c0f\u7c73\u96c6\u56e2\uff08Xiaomi Corporation\uff09\u662f\u4e00\u5bb6\u6295\u8d44\u63a7\u80a1\u516c\u53f8\uff0c\u4e3b\u8981\u4ece\u4e8b\u4e2d\u56fd\u5927\u9646\u53ca\u56fd\u9645\u5e02\u573a\u7684\u667a\u80fd..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0101",
+        "price": 26.2,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Xiaomi Corporation, an investment holding company,..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0053",
+        "price": 26.2,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "Xiaomi Corporation, an investment holding company,..."
+    }
+]

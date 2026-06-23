@@ -37,6 +37,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { showToast, showConfirm } from './hooks/useUI.js'
 
 const props = defineProps({
   symbol: String
@@ -66,14 +67,17 @@ const fetchHistory = async () => {
 onMounted(fetchHistory)
 
 const deleteReport = async (fileTs) => {
-  if (!confirm(`确定要永久删除这份 ${fileTs} 的研报吗？该操作不可逆。`)) return
+  const confirmed = await showConfirm(`确定要永久删除这份 ${fileTs} 的研报吗？该操作不可逆。`)
+  if (!confirmed) return
   try {
-    const res = await (await fetch(`${API_BASE}/archive/${props.symbol}/${fileTs}`, { method: 'DELETE' })).json()
-    alert(res.msg)
+    const savedToken = localStorage.getItem('titan_token')
+    const headers = savedToken ? { 'Authorization': `Bearer ${savedToken}` } : {}
+    const res = await (await fetch(`${API_BASE}/archive/${props.symbol}/${fileTs}`, { method: 'DELETE', headers })).json()
+    showToast(res.msg)
     // 重新获取数据以刷新表格
     await fetchHistory()
   } catch (e) {
-    alert("删除失败，请检查后端服务是否运行。")
+    showToast("删除失败，请检查后端服务是否运行。", "error")
   }
 }
 

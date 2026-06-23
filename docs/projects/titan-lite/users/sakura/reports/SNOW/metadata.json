@@ -1,0 +1,79 @@
+[
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2334",
+        "price": 243.23,
+        "rating": "Hold",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.4,
+        "upside": 0.19927985857007788,
+        "summary_snippet": "Snowflake Inc. \u4e3a\u7f8e\u56fd\u53ca\u56fd\u9645\u5404\u7c7b\u7ec4\u7ec7\u63d0\u4f9b\u57fa\u4e8e\u4e91\u7684\u6570\u636e\u5e73\u53f0\u3002\u5176\u5e73\u53f0\u5305\u542b\u4eba\u5de5\u667a\u80fd\u6570\u636e\u4e91\uff08A..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2312",
+        "price": 243.81,
+        "rating": "Hold",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.8,
+        "upside": 0.196426889791231,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2312",
+        "price": 243.12,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.8,
+        "upside": 0.1998224744981903,
+        "summary_snippet": "Snowflake Inc. \u4e3a\u7f8e\u56fd\u53ca\u56fd\u9645\u5404\u7c7b\u7ec4\u7ec7\u63d0\u4f9b\u57fa\u4e8e\u4e91\u7684\u6570\u636e\u5e73\u53f0\u3002\u5176\u5e73\u53f0\u5305\u542b\u4eba\u5de5\u667a\u80fd\u6570\u636e\u4e91\uff08A..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2305",
+        "price": 242.37,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.8,
+        "upside": 0.20353525601353312,
+        "summary_snippet": "Snowflake Inc. \u4e3a\u7f8e\u56fd\u53ca\u56fd\u9645\u5404\u7c7b\u7ec4\u7ec7\u63d0\u4f9b\u57fa\u4e8e\u4e91\u7684\u6570\u636e\u5e73\u53f0\u3002\u5176\u5e73\u53f0\u5305\u542b\u4eba\u5de5\u667a\u80fd\uff08AI\uff09\u6570..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2253",
+        "price": 241.94,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.5,
+        "upside": 0.20567429941307774,
+        "summary_snippet": "Snowflake Inc. provides a cloud-based data platfor..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_2239",
+        "price": 242.66,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.5,
+        "upside": 0.20209692573971827,
+        "summary_snippet": "Snowflake Inc. provides a cloud-based data platfor..."
+    },
+    {
+        "date": "2026-06-14",
+        "file": "2026-06-14_0043",
+        "price": 232.78,
+        "rating": "Sell",
+        "pe": 0,
+        "roe": -0.54869,
+        "fact_score": 0.5,
+        "upside": 0.25311813729701876,
+        "summary_snippet": "Snowflake Inc. \u4e3a\u7f8e\u56fd\u53ca\u56fd\u9645\u5404\u7c7b\u7ec4\u7ec7\u63d0\u4f9b\u57fa\u4e8e\u4e91\u7684\u6570\u636e\u5e73\u53f0\u3002\u5176\u5e73\u53f0\u5305\u542b\u4eba\u5de5\u667a\u80fd\uff08AI\uff09\u6570..."
+    }
+]

@@ -1,0 +1,57 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2241",
+        "price": 74.76,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2359",
+        "price": 78.33,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0103",
+        "price": 79.92,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0054",
+        "price": 79.92,
+        "rating": "\u89c2\u5bdf (WATCH)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1839",
+        "price": 81.08,
+        "rating": "Underweight",
+        "pe": 25.024693,
+        "roe": 0.092080005,
+        "fact_score": 0.5,
+        "upside": 0.2614311790823879,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    }
+]

@@ -93,3 +93,101 @@ class ChartPainter:
         plt.close(fig) # 关闭画布释放内存
         
         return buf
+
+    def draw_sector_heatmap(self, sector_data: dict, title: str = "Sector Fund Flow Heatmap"):
+        """
+        绘制行业热力图 (Seaborn Heatmap) - 升级版：更高分辨率与专业布局
+        :param sector_data: {'SectorName': fund_flow_value}
+        """
+        import pandas as pd
+        import numpy as np
+
+        if not sector_data:
+            return None
+
+        # 转换数据为 DataFrame，按值大小排序以增强可读性
+        items = sorted(sector_data.items(), key=lambda x: x[1], reverse=True)
+
+        # 布局优化：自适应行列比
+        n = len(items)
+        cols = 5 if n > 10 else 4 if n > 4 else n
+        rows = (n + cols - 1) // cols
+
+        matrix_data = np.zeros((rows, cols))
+        labels = [["" for _ in range(cols)] for _ in range(rows)]
+
+        for i, (name, val) in enumerate(items):
+            r, c = i // cols, i % cols
+            matrix_data[r, c] = val
+            labels[r][c] = f"{name}\n{val:+.1f}%"
+
+        plt.figure(figsize=(14, 2 + rows * 1.5))
+        sns.heatmap(matrix_data, annot=np.array(labels), fmt="", cmap="RdYlGn", 
+                    center=0, linewidths=2, linecolor='#f8f9fa',
+                    cbar_kws={'label': 'Fund Flow (%)', 'orientation': 'horizontal', 'pad': 0.15})
+        plt.title(title, fontsize=18, fontweight='bold', pad=20)
+        plt.axis('off')
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=200, bbox_inches='tight')
+        buf.seek(0)
+        plt.close()
+        return buf
+
+    def draw_valuation_scatter(self, candidates: list, title: str = "Global Markets: Valuation vs. Upside Matrix"):
+        """
+        绘制个股价值散点图 (PE vs Upside) - 升级版：高DPI、智能标注与色彩深度
+        :param candidates: 包含 symbol, pe, upside 的列表
+        """
+        import pandas as pd
+        df = pd.DataFrame(candidates)
+        if df.empty or 'pe' not in df or 'upside' not in df:
+            return None
+
+        # 过滤极端异常值以优化坐标轴展示
+        plot_df = df[(df['pe'] > 0) & (df['pe'] < 120)].copy()
+        if plot_df.empty:
+            return None
+
+        plt.figure(figsize=(12, 9))
+        sns.set_style("whitegrid")
+
+        # 核心散点绘制
+        scatter = plt.scatter(plot_df['pe'], plot_df['upside'] * 100, 
+                             s=abs(plot_df['upside'] * 1000) + 100, 
+                             c=plot_df['upside'] * 100, 
+                             cmap='RdYlGn', alpha=0.7, edgecolors='white', linewidth=1)
+
+        # 添加色彩条
+        cbar = plt.colorbar(scatter)
+        cbar.set_label('Target Upside (%)', fontsize=12)
+
+        # 智能标注：优先标注潜力最高和最低的标的
+        top_candidates = plot_df.sort_values(by='upside', ascending=False).head(15)
+        for i, row in top_candidates.iterrows():
+            plt.annotate(f"{row['symbol']}\n({row['upside']:.1%})", 
+                        (row['pe'], row['upside'] * 100),
+                        xytext=(8, 0), textcoords='offset points',
+                        fontsize=10, fontweight='bold', alpha=0.9,
+                        bbox=dict(boxstyle='round,pad=0.2', fc='yellow', alpha=0.2, ec='none'))
+
+        plt.axhline(0, color='#e74c3c', linestyle='-', linewidth=2, alpha=0.5)
+        plt.axvline(15, color='#3498db', linestyle='--', linewidth=1, alpha=0.5, label='Fair PE (15x)')
+
+        plt.xlabel("Price-to-Earnings (PE) Ratio", fontsize=12, fontweight='bold')
+        plt.ylabel("Expected Upside (%)", fontsize=12, fontweight='bold')
+        plt.title(title, fontsize=18, fontweight='bold', pad=25)
+
+        # 丰富坐标轴信息
+        plt.gca().yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x:+.0f}%'))
+
+        # 添加战术象限说明
+        plt.text(5, plot_df['upside'].max() * 100 * 0.9, "💎 高价值/低估值", color='darkgreen', fontweight='bold', alpha=0.6)
+        plt.text(90, plot_df['upside'].min() * 100 * 0.9, "⚠️ 估值溢价区", color='darkred', fontweight='bold', alpha=0.6)
+
+        plt.tight_layout()
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight') # 300 DPI 极高清晰度
+        buf.seek(0)
+        plt.close()
+        return buf

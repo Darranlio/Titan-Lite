@@ -21,20 +21,8 @@ class VerificationEngine:
         """
         if not news_list: return "无新闻可验证", 0.5
         
-        prompt = f"""
-        你是一个资深的金融事实核查员。
-        股票: {symbol}
-        最新新闻流: {news_list[:5]}
-        
-        请分析：
-        1. 这些新闻是否来源于权威媒体？
-        2. 内容之间是否存在矛盾？
-        3. 是否存在明显的诱多/带节奏嫌疑？
-        
-        请给出：
-        - 真实度评分 (0-1.0)
-        - 简要鉴别结论 (100字以内)
-        """
+        from skills.engine import skill_engine
+        prompt = skill_engine.render_skill("verification_fact_checker", {"symbol": symbol, "news_list": news_list[:5]})
         try:
             resp = self.client.chat.completions.create(
                 model="deepseek-chat",

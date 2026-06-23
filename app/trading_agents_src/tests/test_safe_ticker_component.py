@@ -14,6 +14,10 @@ class TestSafeTickerComponent(unittest.TestCase):
         for ticker in ("AAPL", "BRK-B", "BRK.A", "0700.HK", "7203.T", "BHP.AX", "^GSPC"):
             self.assertEqual(safe_ticker_component(ticker), ticker)
 
+    def test_accepts_chinese_characters(self):
+        for ticker in ("奥比中光", "腾讯控股", "比亚迪"):
+            self.assertEqual(safe_ticker_component(ticker), ticker)
+
     def test_rejects_path_separators(self):
         for bad in (".", "..", "../etc", "a/b", "a\\b", "/abs", "..\\..\\x"):
             with self.assertRaises(ValueError):

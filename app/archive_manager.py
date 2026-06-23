@@ -2,15 +2,24 @@ import os
 import json
 import shutil
 from datetime import datetime
+from typing import Optional
+from utils import sanitize_json_data
 
 class ArchiveManager:
     """
     Titan-Alpha 数字化档案馆管理引擎
     支持研报的索引、筛选、批量删除与版本控制。
     """
-    def __init__(self):
+    def __init__(self, storage_root: Optional[str] = None):
+        # Base path resolution
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        self.reports_root = os.path.join(base_path, "docs", "projects", "titan-lite", "reports")
+        
+        # Identity-Agnostic Path Resolution
+        if storage_root:
+            self.reports_root = os.path.join(base_path, storage_root, "reports")
+        else:
+            # Fallback to legacy path for backward compatibility
+            self.reports_root = os.path.join(base_path, "docs", "projects", "titan-lite", "reports")
 
     def get_all_reports(self):
         """扫描所有标的的元数据，构建全局研报索引"""
@@ -27,6 +36,10 @@ class ArchiveManager:
                 try:
                     with open(meta_path, "r", encoding="utf-8") as f:
                         history = json.load(f)
+                        
+                        # Data Sanitization for JSON compliance (NaN -> None)
+                        history = sanitize_json_data(history)
+
                         for run in history:
                             # 丰富条目信息
                             run['symbol'] = symbol
@@ -72,5 +85,5 @@ class ArchiveManager:
             return True, f"标的 {symbol} 的所有历史档案已彻底销毁"
         return False, "找不到该档案"
 
-# 导出单例
+# 默认导出单例 (使用旧路径以保持兼容性)
 archive_manager = ArchiveManager()

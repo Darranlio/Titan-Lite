@@ -1,0 +1,123 @@
+[
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2338",
+        "price": 201.25,
+        "rating": "Sell",
+        "pe": 30.81623,
+        "roe": 1.14288,
+        "fact_score": 0.8,
+        "upside": 0.4853773913043479,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u5728\u5168\u7403\u8303\u56f4\u5185\u8fd0\u8425\u7684\u6570\u636e\u4e2d\u5fc3\u7ea7AI\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a..."
+    },
+    {
+        "date": "2026-06-23",
+        "file": "2026-06-23_2240",
+        "price": 202.71,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "NVIDIA Corporation operates as a data center scale..."
+    },
+    {
+        "date": "2026-06-22",
+        "file": "2026-06-22_2300",
+        "price": 208.95,
+        "rating": "Hold",
+        "pe": 32.0,
+        "roe": 1.14288,
+        "fact_score": 0.8,
+        "upside": 0.4306398659966501,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u5728\u5168\u7403\u8303\u56f4\u5185\u8fd0\u8425\u7684\u6570\u636e\u4e2d\u5fc3\u7ea7AI\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a..."
+    },
+    {
+        "date": "2026-06-22",
+        "file": "2026-06-22_2300",
+        "price": 208.96,
+        "rating": "Hold",
+        "pe": 31.998466,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.4305714012251149,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u5728\u5168\u7403\u8303\u56f4\u5185\u8fd0\u8425\u7684\u6570\u636e\u4e2d\u5fc3\u7ea7AI\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_2336",
+        "price": 209.19,
+        "rating": "Hold",
+        "pe": 32.079754,
+        "roe": 1.14288,
+        "fact_score": 0.5,
+        "upside": 0.42899851809359923,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u5728\u5168\u7403\u8303\u56f4\u5185\u8fd0\u8425\u7684\u6570\u636e\u4e2d\u5fc3\u7ea7AI\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a..."
+    },
+    {
+        "date": "2026-06-16",
+        "file": "2026-06-16_0013",
+        "price": 212.55,
+        "rating": "Buy",
+        "pe": 32.54977,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.40640884497765234,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0101",
+        "price": 205.19,
+        "rating": "\u8df3\u8fc7 (SKIP)",
+        "pe": 0,
+        "roe": 0,
+        "fact_score": "-",
+        "upside": 0,
+        "summary_snippet": "NVIDIA Corporation operates as a data center scale..."
+    },
+    {
+        "date": "2026-06-15",
+        "file": "2026-06-15_0024",
+        "price": 205.19,
+        "rating": "Overweight",
+        "pe": 31.422665,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.4568555972513282,
+        "summary_snippet": "\u6682\u65e0\u4e1a\u52a1\u7b80\u4ecb..."
+    },
+    {
+        "date": "2026-06-14",
+        "file": "2026-06-14_0114",
+        "price": 205.19,
+        "rating": "Underweight",
+        "pe": 31.422665,
+        "roe": 1.14288,
+        "fact_score": 0.5,
+        "upside": 0.4568555972513282,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    },
+    {
+        "date": "2026-06-13",
+        "file": "2026-06-13_2354",
+        "price": 205.19,
+        "rating": "Sell",
+        "pe": 31.422665,
+        "roe": 1.14288,
+        "fact_score": 0.5,
+        "upside": 0.4568555972513282,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    },
+    {
+        "date": "2026-06-07",
+        "file": "2026-06-07_1320",
+        "price": 205.1,
+        "rating": "Overweight",
+        "pe": 31.457056,
+        "roe": 1.14288,
+        "fact_score": 0.4,
+        "upside": 0.45501579717211127,
+        "summary_snippet": "\u82f1\u4f1f\u8fbe\u516c\u53f8\uff08NVIDIA Corporation\uff09\u662f\u4e00\u5bb6\u4ee5\u6570\u636e\u4e2d\u5fc3\u89c4\u6a21\u4e3a\u6838\u5fc3\u7684\u4eba\u5de5\u667a\u80fd\u57fa\u7840\u8bbe\u65bd\u4f01\u4e1a\u3002..."
+    }
+]

@@ -83,8 +83,22 @@ class AgentBridge:
             from datetime import datetime
             date = datetime.now().strftime("%Y-%m-%d")
 
+        # 检查运行模式
+        mode = getattr(settings, 'ANALYSIS_MODE', 'solo').lower()
+
+        if mode == 'solo':
+            print(f"\n>>> [Agent] 启动单兵极速模式 (Solo Expert): {symbol} @ {date}")
+            return self.solo_fallback_analyze(symbol, context_extra)
+        elif mode == 'quant':
+            print(f"\n>>> [Agent] 极速纯量化模式下由 Orchestrator 直接处理决策。")
+            return {
+                "action": "Hold",
+                "rationale": "量化模型判定，不进行大模型交互。",
+                "reports": {}, "debates": {}
+            }
+
         print(f"\n" + "="*50)
-        print(f">>> [Agent] 启动深度研判: {symbol} @ {date}")
+        print(f">>> [Agent] 启动多智能体深度博弈: {symbol} @ {date}")
         print("="*50 + "\n")
 
         try:
@@ -92,6 +106,7 @@ class AgentBridge:
             # final_state: 完整的状态机字典
             # rating: 提取出来的评级字符串 (e.g., "BUY")
             final_state, rating = self.agent_graph.propagate(symbol, date)
+
             
             # 2. 构建结构化的决策对象
             decision = {
@@ -111,15 +126,16 @@ class AgentBridge:
             }
 
             if context_extra:
-                decision['rationale'] = f"{context_extra}\n{decision.get('rationale', '')}"
+                decision['rationale'] = f"{context_extra}\n\n[Agent 决策理由]\n{decision.get('rationale', '')}"
             
             print(f"\n>>> [Agent] {symbol} 研判完成！生成决策: {decision.get('action')}")
             return decision
 
         except Exception as e:
-            # 尝试 2: 降级方案 - 如果多智能体撞了配额，直接进行单兵研判
-            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "insufficient_quota" in str(e).lower():
-                print(f"⚠️ 多智能体配额超限，正在启动单兵备用大脑 (Solo Agent)...")
+            # 尝试 2: 降级方案 - 如果多智能体撞了配额或欠费，直接进行单兵研判
+            err_msg = str(e).lower()
+            if any(kw in err_msg for kw in ["429", "402", "resource_exhausted", "insufficient_quota", "insufficient balance"]):
+                print(f"⚠️ 多智能体配额或余额不足，正在启动单兵备用大脑 (Solo Agent)...")
                 return self.solo_fallback_analyze(symbol, context_extra)
 
             print(f"Agent 分析失败 {symbol}: {e}")
@@ -135,14 +151,8 @@ class AgentBridge:
             base_url=settings.LLM_BASE_URL
         )
 
-        prompt = f"""
-        你是一位资深的量化投资专家。请根据以下数据为股票 {symbol} 提供一份详尽的中文投研建议：
-        {context}
-        要求：
-        1. 给出明确的操作建议 (买入/持有/卖出)。
-        2. 详细阐述核心逻辑（涵盖基本面、技术面和风险点）。
-        3. 必须使用中文回答。
-        """
+        from skills.engine import skill_engine
+        prompt = skill_engine.render_skill("solo_quant_expert", {"symbol": symbol, "context": context})
         try:
             resp = client.chat.completions.create(
                 model="deepseek-chat", 
