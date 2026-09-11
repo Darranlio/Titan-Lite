@@ -20,5 +20,7 @@ mcp>=0.1.0
 fastmcp
 nest_asyncio
 PyJWT
-passlib[bcrypt]
+passlib
+bcrypt==4.0.1
 akshare
+mootdx

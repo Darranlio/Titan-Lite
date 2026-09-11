@@ -34,6 +34,25 @@ class FMPProvider:
             print(f"FMP 请求异常 ({symbol}): {e}")
             return {}
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    def get_price_target(self, symbol):
+        """获取分析师目标价共识 (targetConsensus + 覆盖人数)"""
+        if not self.api_key: return {}
+        url = f"{self.base_url}/price-target-consensus"
+        params = {"symbol": symbol, "apikey": self.api_key}
+        try:
+            resp = requests.get(url, params=params, timeout=10)
+            if resp.status_code != 200 or not resp.text.strip():
+                return {}
+            data = resp.json()
+            if isinstance(data, dict) and "Error Message" in data:
+                print(f"FMP API 错误 (PriceTarget): {data['Error Message']}")
+                return {}
+            return data[0] if data and isinstance(data, list) else {}
+        except Exception as e:
+            print(f"FMP 请求异常 ({symbol}): {e}")
+            return {}
+
     def get_key_metrics(self, symbol):
         """获取核心财务指标 (PE, ROE等)"""
         if not self.api_key: return {}

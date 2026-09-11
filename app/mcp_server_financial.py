@@ -76,7 +76,11 @@ def get_analyst_forecast(symbol: str) -> str:
             "peRatioTTM": info.get("trailingPE") or 0,
             "roeTTM": info.get("returnOnEquity") or 0,
             "sector": info.get("sector", "Unknown"),
-            "industry": info.get("industry", "Unknown")
+            "industry": info.get("industry", "Unknown"),
+            "marketCap": info.get("marketCap") or 0,
+            "averageVolume": info.get("averageVolume") or 0,
+            "longName": info.get("longName", symbol),
+            "numberOfAnalystOpinions": info.get("numberOfAnalystOpinions") or 0
         }
         return json.dumps(result)
     except Exception as e:

@@ -1,3 +1,4 @@
+import asyncio
 import pandas as pd
 from datetime import datetime, timedelta
 import os
@@ -47,7 +48,7 @@ class TitanStrategyV2:
             return
 
         sys_logger.info(f"🔍 步骤 1/4: 正在进行{market}全市场初筛 (筛选潜力洼地)...", stage="Screening", progress=15, task_type="batch")
-        candidates = valuation_screener.run(market=market)
+        candidates = asyncio.run(valuation_screener.run(market=market))
         if not candidates: 
             sys_logger.info(">>> 本次扫描未发现符合条件的潜力标的。", stage="Completed", progress=100, task_type="batch")
             return

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 import pandas as pd
 import nest_asyncio
 from mcp_client import get_mcp_client
@@ -16,15 +17,38 @@ class DataProvider:
     严格作为 Reader，不包含业务逻辑或 LLM 调用。
     """
 
+    def __init__(self):
+        # 专用后台循环仅供「无运行中事件循环」的调用方（如 FastAPI 线程池）使用，
+        # 保证 MCP 单例始终在同一个循环上，避免跨线程复用 asyncio 对象导致死锁。
+        self._loop = None
+        self._lock = threading.Lock()
+
+    def _get_dedicated_loop(self):
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+            threading.Thread(
+                target=self._loop.run_forever, daemon=True, name="mcp-loop"
+            ).start()
+        return self._loop
+
     def _run_sync(self, coro):
-        """同步运行异步任务的辅助函数"""
+        """同步运行异步任务（线程安全）。
+
+        - 已有运行中事件循环（如分析子进程的 asyncio.run）：复用当前循环，
+          由 nest_asyncio 支持嵌套运行；
+        - 否则（如 FastAPI 线程池）：统一走专用后台循环，串行执行。
+        """
         try:
-            loop = asyncio.get_event_loop()
+            running_loop = asyncio.get_running_loop()
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        return asyncio.get_event_loop().run_until_complete(coro)
+            running_loop = None
+
+        if running_loop is not None:
+            return running_loop.run_until_complete(coro)
+
+        loop = self._get_dedicated_loop()
+        with self._lock:
+            return asyncio.run_coroutine_threadsafe(coro, loop).result()
 
     def get_history_price(self, symbol, start_date=None, end_date=None, days=30, **kwargs):
         """通过 MCP 获取历史行情"""
@@ -99,6 +123,18 @@ class DataProvider:
             return data
         except: 
             return {"summary_en": "获取失败", "full_name": symbol}
+
+    def get_ashare_valuation(self, symbol):
+        """通过 MCP 获取 A股机构级估值 (full_valuation: Forward PE/PEG/CAGR/分析师覆盖数)"""
+        async def _fetch():
+            clean_symbol = symbol.split('.')[0]
+            client = await get_mcp_client()
+            res = await client.call_tool("get_ashare_valuation_details", {"symbol": clean_symbol})
+            return json.loads(res) if res else {}
+
+        try:
+            return self._run_sync(_fetch())
+        except: return {}
 
     def get_ashare_specifics(self, symbol):
         """通过 MCP 获取 A股专用指标"""

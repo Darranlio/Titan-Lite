@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 获取根目录和 app 目录
-root_dir = Path(__file__).parent
+root_dir = Path(__file__).parent.parent
 app_dir = root_dir / "app"
 
 # 将 app 目录加入 Python 搜索路径，解决内部导入问题
