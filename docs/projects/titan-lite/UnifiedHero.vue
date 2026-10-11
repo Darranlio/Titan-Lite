@@ -34,7 +34,7 @@
             </div>
           </div>
           <div class="author-info">
-            <span class="name">Darranlio</span>
+            <span class="name">作者:Darranlio</span>
             <span class="role">美团无人机</span>
             <div class="bio-short">算法工程师</div>
             <div class="mini-links">

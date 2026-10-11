@@ -47,15 +47,29 @@ const progress = ref(0)
 const currentTaskType = ref('none')
 let timer = null
 
-const API_BASE = typeof window !== 'undefined' 
-  ? `${window.location.protocol}//${window.location.hostname}:8000` 
+const API_BASE = typeof window !== 'undefined'
+  ? `${window.location.protocol}//${window.location.hostname}:8000`
   : 'http://localhost:8000'
+
+// 仅在已登录（有 token）时附带 Authorization 头，避免未登录时发送 "Bearer null"
+const authHeaders = () => {
+  const token = localStorage.getItem('titan_token')
+  return token ? { 'Authorization': `Bearer ${token}` } : {}
+}
+
+// 未登录时弹窗提示并阻止操作，避免发出无 token 的请求
+const requireLogin = () => {
+  if (!localStorage.getItem('titan_token')) {
+    alert('请登录账号后再使用该功能')
+    return false
+  }
+  return true
+}
 
 const fetchLogs = async () => {
   try {
-    const token = localStorage.getItem('titan_token')
     const res = await fetch(`${API_BASE}/logs?type=${currentTaskType.value}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: authHeaders()
     })
     const data = await res.json()
     logs.value = data.logs
@@ -86,17 +100,17 @@ const stopPolling = () => {
 }
 
 const runBatchAnalysis = async () => {
+  if (!requireLogin()) return
   loadingBatch.value = true
   batchStatus.value = '正在启动全市场深度扫描...'
   currentTaskType.value = 'batch'
   startPolling()
   try {
-    const token = localStorage.getItem('titan_token')
-    await fetch(`${API_BASE}/run`, { 
+    await fetch(`${API_BASE}/run`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
+        ...authHeaders()
       },
       body: JSON.stringify({ market: 'Global', mode: 'solo' })
     })
@@ -110,6 +124,7 @@ const runBatchAnalysis = async () => {
 }
 
 const runSingleAnalysis = async () => {
+  if (!requireLogin()) return
   if (!ticker.value) return
   
   // 立即清理本地状态，防止历史遗留日志闪烁
@@ -122,10 +137,9 @@ const runSingleAnalysis = async () => {
   currentTaskType.value = 'single'
   startPolling()
   try {
-    const token = localStorage.getItem('titan_token')
-    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}?mode=${analysisMode.value}`, { 
+    const response = await fetch(`${API_BASE}/analyze/${ticker.value.toUpperCase()}?mode=${analysisMode.value}`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: authHeaders()
     })
     const data = await response.json()
     if (data.status === 'started') {
@@ -139,10 +153,9 @@ const runSingleAnalysis = async () => {
 
 const stopAnalysis = async () => {
   try {
-    const token = localStorage.getItem('titan_token')
-    await fetch(`${API_BASE}/stop`, { 
+    await fetch(`${API_BASE}/stop`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: authHeaders()
     })
     singleStatus.value = '🛑 已手动终止'
     batchStatus.value = ''
