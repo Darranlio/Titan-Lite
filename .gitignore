@@ -4,8 +4,10 @@ node_modules/
 **/.env
 .env*
 app/data/
+app/.venv/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+docs/projects/titan-lite/users/
 .DS_Store
 *.pyc
 app/trading_agents_src/.git/
