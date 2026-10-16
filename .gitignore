@@ -12,3 +12,5 @@ docs/projects/titan-lite/users/
 *.pyc
 app/trading_agents_src/.git/
 .aider*
+project_context.txt
+.token-optimizer/
